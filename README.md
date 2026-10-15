@@ -89,8 +89,8 @@ Repo hiện chưa có mã nguồn để chạy. Hello World, 1 test và CI thu�
 ## 10. Kế hoạch và việc còn thiếu ở W1
 
 - [x] Có repo và README với tên đề tài, câu định vị, hai giả thuyết, phạm vi 3 Must và bảng trước–sau 6 cột.
-- [ ] Bổ sung xác nhận pilot bằng văn bản, thông tin thực tế và ≥2 nhóm dự phòng.
-- [ ] Hoàn thiện bản 1 trang: vấn đề, CH1–CH2, H1–H2, biến thay đổi và hai chỉ số.
+- [x] Bổ sung xác nhận pilot bằng văn bản, thông tin thực tế và ≥2 nhóm dự phòng.
+- [x] Hoàn thiện bản 1 trang: vấn đề, CH1–CH2, H1–H2, biến thay đổi và hai chỉ số.
 - [ ] Hoàn thiện đề cương V2 và Phiếu đăng ký có chữ ký; gộp PDF.
 - [ ] Có tài khoản AWS Academy và ảnh sau đăng nhập.
 - [ ] Chuẩn bị PDF W1: Phiếu nhật ký, trả lời tư duy, Nhật ký AI, minh chứng và chương nháp.
