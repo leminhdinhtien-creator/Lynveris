@@ -13,7 +13,7 @@ Developing Lynveris: A Family App Warning of Phishing Links in Messages Based on
 
 ## 2. Câu định vị
 
-Lynveris hỗ trợ thành viên gia đình, đặc biệt người lớn tuổi, kiểm tra đường link trong tin nhắn bằng đặc trưng URL kết hợp nguồn tin đe doạ, đánh giá bằng recall trên link lừa đảo mới và tỉ lệ nhận diện đúng trong bài kiểm tra trước–sau.
+Đồ án giải quyết vấn đề khó nhận diện đường link lừa đảo trong tin nhắn cho thành viên gia đình, đặc biệt người lớn tuổi, đo bằng recall phát hiện link lừa đảo mới (kèm tỉ lệ báo nhầm) và tỉ lệ nhận diện đúng trong bài kiểm tra trước–sau.
 
 ## 3. Trạng thái đầu W1
 
@@ -39,8 +39,8 @@ CH1–CH2, H1–H2 và cách đo bắt buộc giữ theo V4; nếu cần đổi,
 
 | Chỉ số | Cách đo | Trước | Sau | Ngày đo | Bằng chứng |
 |---|---|---|---|---|---|
-| Recall trên URL lừa đảo mới (%), kèm tỉ lệ báo nhầm trên URL thật | So sánh danh sách đen và mô hình kết hợp trên cùng tập kiểm thử tách theo thời gian; báo cáo TP, FP, TN, FN và phiên bản nguồn | Chưa có số đo baseline trong repo | | | |
-| Tỉ lệ nhận diện đúng trong bài kiểm tra 10 tin nhắn có link (%) | Cùng thành viên gia đình; hai bộ 10 tin nhắn tương đương, cùng hướng dẫn; ghi điểm từng người trước/sau | Chưa có số đo trước trong repo | | | |
+| Recall trên URL lừa đảo mới (%), kèm tỉ lệ báo nhầm trên URL thật | So sánh danh sách đen và mô hình kết hợp trên cùng tập kiểm thử tách theo thời gian; báo cáo TP, FP, TN, FN và phiên bản nguồn | Chưa đo. Dự kiến W2 đo baseline sơ bộ bằng danh sách đen; W6 so sánh trên tập kiểm thử đã khoá | | | |
+| Tỉ lệ nhận diện đúng trong bài kiểm tra 10 tin nhắn có link (%) | Cùng thành viên gia đình; hai bộ 10 tin nhắn tương đương, cùng hướng dẫn; ghi điểm từng người trước/sau | Chưa đo. Dự kiến W2 làm bài kiểm tra trước khi dùng ứng dụng, ghi số đúng/10 của từng người | | | |
 
 - Với CH1, “Trước” là baseline danh sách đen; “Sau” là mô hình kết hợp. Đây là so sánh hai phương pháp trong cùng điều kiện.
 - Với CH2, “Trước” là tự nhận diện; “Sau” là nhận diện khi có Lynveris cảnh báo.
@@ -89,10 +89,10 @@ Repo hiện chưa có mã nguồn để chạy. Hello World, 1 test và CI thu�
 ## 10. Kế hoạch và việc còn thiếu ở W1
 
 - [x] Có repo và README với tên đề tài, câu định vị, hai giả thuyết, phạm vi 3 Must và bảng trước–sau 6 cột.
-- [x] Bổ sung xác nhận pilot bằng văn bản, thông tin thực tế và ≥2 nhóm dự phòng.
+- [ ] Hoàn tất và kiểm tra hồ sơ pilot cùng danh sách ≥2 nhóm dự phòng trước khi đánh dấu hoàn thành.
 - [x] Hoàn thiện bản 1 trang: vấn đề, CH1–CH2, H1–H2, biến thay đổi và hai chỉ số.
-- [ ] Hoàn thiện đề cương V2 và Phiếu đăng ký có chữ ký; gộp PDF.
-- [ ] Có tài khoản AWS Academy và ảnh sau đăng nhập.
+- [x] Đã soạn đề cương V2 và gộp với Phiếu đăng ký có chữ ký thành PDF; cần rà soát và nộp LMS.
+- [x] Có ảnh đăng nhập AWS Academy; chưa ghi nhận phần trăm học hoặc hoàn thành khoá học.
 - [ ] Chuẩn bị PDF W1: Phiếu nhật ký, trả lời tư duy, Nhật ký AI, minh chứng và chương nháp.
 - [ ] Chuẩn bị máy và dự án chạy được cho buổi báo cáo.
 
