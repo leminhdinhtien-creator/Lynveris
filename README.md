@@ -48,7 +48,7 @@ docker compose up --build -d --wait api
 docker compose logs --tail 50 api
 ```
 
-Compose chạy PostgreSQL 18, migrations trước API và health checks. Cổng DB không công khai; API bind 127.0.0.1:8000. Trên Linux dùng cùng lệnh với `cp` thay `Copy-Item`. Dừng bằng `docker compose down`; volume DB vẫn được giữ. Chỉ xoá volume nếu muốn xoá vĩnh viễn dữ liệu cục bộ đã biết rõ. Máy thực hiện bàn giao chưa cài Docker, nên việc chạy container được để CI xác minh; kiểm thử PostgreSQL native đã chạy riêng.
+Compose chạy PostgreSQL 18, migrations trước API và health checks. Cổng DB không công khai; API bind 127.0.0.1:8000. Trên Linux dùng cùng lệnh với `cp` thay `Copy-Item`. Dừng bằng `docker compose down`; volume DB vẫn được giữ. Chỉ xoá volume nếu muốn xoá vĩnh viễn dữ liệu cục bộ đã biết rõ. Máy thực hiện bàn giao chưa cài Docker; build và chạy Compose đã đạt trên GitHub CI, cùng kiểm thử PostgreSQL native riêng tại máy.
 
 ## Kiểm tra và build
 

@@ -14,6 +14,8 @@ Ngày kiểm tra: **28/10/2026, múi giờ Việt Nam**. Đây là kết quả c
 | PostgreSQL 18 native | Alembic upgrade, schema check, API readiness, insert thống kê có đồng ý và delete theo mã thiết bị đều đạt trên cluster kiểm thử riêng |
 | SQLite phát triển | Schema check không có thay đổi chưa migrate |
 | APK ứng dụng thường | Build debug thành công. Bản trong `artifacts/lynveris-debug.apk` được kiểm tra không chứa entrypoint integration test; không dùng APK test runner để bàn giao |
+| Docker Compose trên CI | Build image, chạy migrations/PostgreSQL/API bằng Compose, chờ healthy và gọi `/ready` đã đạt |
+| GitHub CI | Cả backend và Flutter đã **success** tại commit `8a179ff9197b60b01fea483864de8b6bbc8aca86`: [run 40710865943](https://github.com/leminhdinhtien-creator/Lynveris/actions/runs/40710865943) |
 | Flutter web | Build cuối thành công với `--no-web-resources-cdn`; đã kiểm tra giao diện và gọi API thật bằng trình duyệt |
 | Dữ liệu thật | Collector xác nhận 235.795 dòng UCI: nhãn gốc 100.945 phishing / 134.850 legitimate. Manifest ở `data/phiusiil-quarantine/manifest.json`; không đưa vào train temporal do thiếu timestamp từng dòng |
 
@@ -44,10 +46,11 @@ Chưa có **10 lỗi nhận diện thực địa** được quan sát và gán n
 
 - **Google live:** cần `LYNVERIS_GOOGLE_API_KEY` hợp lệ ở backend; hiện chỉ xác minh hợp đồng adapter bằng mock và trạng thái thiếu cấu hình thật. Không có mock thay thế trong ứng dụng.
 - **Model và H1:** cần dữ liệu hai nhãn có timestamp/bằng chứng/quyền sử dụng, đủ ba giai đoạn và snapshot blacklist đương thời. Chưa có model triển khai; chưa đo precision/recall/F1/FPR thật, URL mới, coverage nghiên cứu hoặc mức cải thiện +30 điểm phần trăm.
-- **Docker:** máy không có Docker CLI/daemon. Đã có Dockerfile/Compose/health check và CI định nghĩa lệnh build/run, chưa xác nhận container chạy trên máy này.
-- **CI trên GitHub:** workflow đã được cấu hình, chưa có kết quả chạy remote được xác nhận trong lần ghi nhận này. Không gắn badge xanh giả.
+- **Docker tại máy này:** không có Docker CLI/daemon; chạy container đã được xác minh trên GitHub CI thay thế. PostgreSQL native cũng đã chạy đạt riêng.
 - **Thiết bị thật:** đã kiểm tra emulator; chưa xác minh Android Share từ từng ứng dụng nguồn, share sheet/OEM, bàn phím và khả năng đọc trên điện thoại vật lý/người dùng gia đình. Không có thử nghiệm pilot hoặc chỉ số H2 trong phạm vi bàn giao.
 
 ## Kiểm tra thiết bị trước khi dùng rộng hơn
 
 Trên điện thoại thử nghiệm với backend HTTPS thật: chia sẻ một URL và tin nhắn nhiều URL từ ứng dụng nguồn; xác nhận chỉ URL được chọn gửi đi; thử Dán/Xoá, bàn phím và chữ lớn; thử mất mạng/timeout; bật/tắt lịch sử, xoá từng mục/tất cả; mở share sheet rồi huỷ; xác minh thống kê bật/tắt/xoá và thông báo lỗi khi server mất kết nối. Chưa đánh dấu các thao tác chưa thực hiện là đạt. Không gửi dữ liệu nhạy cảm hoặc URL chứa OTP/token trong các ca thử.
+
+Ảnh ở `artifacts/screenshots/` là ảnh native do ca integration test tạo với URL thử nghiệm, không phải ảnh giao diện dựng giả. Collector đọc đúng các PNG có tên cố định trong vùng tạm của chính ứng dụng debug (code_cache hoặc cache theo SDK), xác nhận chữ ký PNG rồi báo test đã thu xong trước khi Flutter gỡ APK test. Ca thu ảnh cuối cùng đã chạy đạt.

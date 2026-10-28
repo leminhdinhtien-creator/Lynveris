@@ -22,22 +22,27 @@ def main():
     output = Path(args.output)
     output.mkdir(parents=True, exist_ok=True)
     deadline = time.monotonic() + args.wait_seconds
+    remote_directory = None
     while time.monotonic() < deadline:
-        marker = subprocess.run(
-            [
-                args.adb,
-                "-s",
-                args.device,
-                "exec-out",
-                "run-as",
-                "vn.lynveris.lynveris",
-                "cat",
-                "cache/qa-ready",
-            ],
-            capture_output=True,
-            timeout=15,
-        )
-        if marker.stdout.strip() == b"ready":
+        for candidate in ("code_cache", "cache"):
+            marker = subprocess.run(
+                [
+                    args.adb,
+                    "-s",
+                    args.device,
+                    "exec-out",
+                    "run-as",
+                    "vn.lynveris.lynveris",
+                    "cat",
+                    f"{candidate}/qa-ready",
+                ],
+                capture_output=True,
+                timeout=15,
+            )
+            if marker.stdout.strip() == b"ready":
+                remote_directory = candidate
+                break
+        if remote_directory:
             break
         time.sleep(1)
     else:
@@ -54,7 +59,7 @@ def main():
                 "run-as",
                 "vn.lynveris.lynveris",
                 "cat",
-                f"cache/{name}.png",
+                f"{remote_directory}/{name}.png",
             ],
             capture_output=True,
             check=True,
@@ -75,7 +80,7 @@ def main():
             "run-as",
             "vn.lynveris.lynveris",
             "touch",
-            "cache/qa-collected",
+            f"{remote_directory}/qa-collected",
         ],
         capture_output=True,
         check=True,
