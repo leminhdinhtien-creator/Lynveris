@@ -6,6 +6,8 @@
 
 Đề tài: **Phát triển Lynveris: ứng dụng cảnh báo đường link lừa đảo trong tin nhắn cho gia đình dựa trên đặc trưng URL và nguồn tin đe doạ.** Tên SafeGuard trong V4 được đổi thành Lynveris theo yêu cầu hiện tại. CH1/H1 về phát hiện URL mới và CH2/H2 về khả năng nhận diện của người dùng được giữ nguyên; chưa có kết quả thực nghiệm cho hai giả thuyết. Repository chỉ triển khai sản phẩm và tài liệu kỹ thuật.
 
+[Bảng chức năng đã kiểm tra, bằng chứng local và phần còn thiếu](docs/acceptance.md) ghi nhận cả Android Share hai chiều và khởi động lại từ Share. Model và benchmark khóa được giữ nguyên trong lượt kiểm tra cuối.
+
 ## Chạy nhanh trên Windows
 
 Cần Python 3.10–3.12, Git, Flutter 3.47.4/Dart đi kèm, Android SDK và JDK tương thích. Lệnh dưới đây chạy từ thư mục repository trong PowerShell:

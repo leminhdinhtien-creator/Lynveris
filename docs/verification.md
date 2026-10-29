@@ -15,6 +15,7 @@ Ngày kiểm tra: **29/10/2026, múi giờ Việt Nam**. Chạy trực tiếp tr
 | Lịch sử trên Android | Lưu thật qua SharedPreferences, tạo AppStore mới đọc lại đủ ba mục, ẩn path/query, mở lại chi tiết, xoá một mục và xoá hết dữ liệu thử đều đạt |
 | Mất kết nối và timeout trên Android | Thử cổng đóng và TCP nhận kết nối nhưng không phản hồi: UI báo chưa kiểm tra/quá thời gian chờ, không tạo kết quả và không lưu thêm thống kê |
 | Nguồn không cấu hình trên Android | Secondary API thực có Google key rỗng và OpenPhish live: UI hiện partial và Google not_configured; không có transport/kết quả giả |
+| Android Share thật | Chrome → Lynveris nhận URL khi đang có kết quả và sau đóng task/process khởi động lại; kiểm tra API thành công. Share kết quả mở/huỷ được, chỉ hostname/mức/thời gian, không path/query, không gửi cho người khác. Bằng chứng local `lynveris-share-incoming.png`, `lynveris-share-cold-start.png`, `lynveris-android-share.png` |
 | Nguồn thật | Google key thật đã tạo/restrict API/lưu local. API provider `combined` gọi cả Google và OpenPhish; URL đối chứng not_found, URL feed detected, từng child status có thời gian thật. Có Google live detected riêng; không dùng mock runtime hoặc attribution nhầm nguồn |
 | SQLite phát triển | Schema check không có thay đổi chưa migrate |
 | APK ứng dụng thường | Build debug thành công. Bản trong `artifacts/lynveris-debug.apk` được kiểm tra không chứa entrypoint integration test; không dùng APK test runner để bàn giao |
@@ -59,6 +60,8 @@ URL đối chứng thiết kế `example.org` có query thử bị model cảnh 
 - **Thiết bị thật:** đã kiểm tra emulator; chưa xác minh Android Share từ từng ứng dụng nguồn, share sheet/OEM, bàn phím và khả năng đọc trên điện thoại vật lý/người dùng gia đình. Không có thử nghiệm pilot hoặc chỉ số H2 trong phạm vi bàn giao.
 
 ## Kiểm tra thiết bị trước khi dùng rộng hơn
+
+[Bảng chức năng và bằng chứng bản hiện tại](acceptance.md) tổng hợp lượt kiểm tra cuối. Backend130 test và Flutter15 test đạt, analyze/format/Ruff đạt; không chạy lại test nghiên cứu khóa. Hash model/split/report/lock và tập ID database được đối chiếu không thay đổi.
 
 Trên điện thoại thử nghiệm với backend HTTPS thật: chia sẻ một URL và tin nhắn nhiều URL từ ứng dụng nguồn; xác nhận chỉ URL được chọn gửi đi; thử Dán/Xoá, bàn phím và chữ lớn; thử mất mạng/timeout; bật/tắt lịch sử, xoá từng mục/tất cả; mở share sheet rồi huỷ; xác minh thống kê bật/tắt/xoá và thông báo lỗi khi server mất kết nối. Chưa đánh dấu các thao tác chưa thực hiện là đạt. Không gửi dữ liệu nhạy cảm hoặc URL chứa OTP/token trong các ca thử.
 
