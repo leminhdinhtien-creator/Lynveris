@@ -1,4 +1,5 @@
 import java.util.Properties
+import java.util.Base64
 
 plugins {
     id("com.android.application")
@@ -8,6 +9,15 @@ plugins {
 
 val releaseKeysFile = rootProject.file("key.properties")
 val releaseKeys = Properties()
+// Flutter test builds a generated listener target, so inspect its native-report define too.
+val integrationBuild = (project.findProperty("dart-defines") as? String).orEmpty()
+    .split(",").any { encoded ->
+        runCatching { String(Base64.getDecoder().decode(encoded), Charsets.UTF_8) }
+            .getOrDefault("").startsWith("INTEGRATION_TEST_SHOULD_REPORT_RESULTS_TO_NATIVE=")
+    }
+val qaBuild = project.findProperty("lynverisQa") == "true" ||
+    (project.findProperty("target") as? String)?.contains("integration_test") == true ||
+    integrationBuild
 if (releaseKeysFile.exists()) {
     releaseKeysFile.inputStream().use { releaseKeys.load(it) }
 }
@@ -24,7 +34,8 @@ android {
 
     defaultConfig {
         // Stable identifier for Lynveris Android builds.
-        applicationId = "vn.lynveris.lynveris"
+        applicationId = if (qaBuild) "vn.lynveris.lynveris.qa" else "vn.lynveris.lynveris"
+        manifestPlaceholders["lynverisLabel"] = if (qaBuild) "Lynveris QA" else "Lynveris"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

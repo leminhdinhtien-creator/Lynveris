@@ -1,4 +1,5 @@
 import argparse
+import hashlib
 import json
 import platform
 from datetime import datetime, timezone
@@ -14,7 +15,7 @@ from sklearn.preprocessing import StandardScaler
 
 from ..features import FEATURE_VERSION, features
 from ..service import data_versions
-from .data import group_keys, read_records, sha, timestamp
+from .data import fits_split, group_keys, read_records, sha, timestamp
 from .metrics import choose_threshold, fused_scores, metrics
 
 
@@ -50,16 +51,12 @@ def train(split_dir, output):
     )
     validation_at = timestamp(split_manifest["validation_start"])
     test_at = timestamp(split_manifest["test_start"])
+    protocol = split_manifest.get("evaluation_protocol", "event_time")
     if validation_at >= test_at or any(
-        timestamp(r["observed_at"]) >= validation_at or timestamp(r["label_at"]) >= validation_at
-        for r in training
+        not fits_split(r, "train", validation_at, test_at, protocol) for r in training
     ):
         raise ValueError("Training observations and labels must precede validation")
-    if any(
-        not validation_at <= timestamp(r["observed_at"]) < test_at
-        or timestamp(r["label_at"]) >= test_at
-        for r in validation
-    ):
+    if any(not fits_split(r, "validation", validation_at, test_at, protocol) for r in validation):
         raise ValueError("Validation observations and labels must precede the locked test boundary")
     validate_size(training, "train")
     validate_size(validation, "validation")
@@ -105,7 +102,21 @@ def train(split_dir, output):
             url_only_threshold=url_threshold,
             combined=combined,
             url_only=metrics(vy, scores >= url_threshold),
-            blacklist_only=metrics(vy, threat_vector(validation)),
+            blacklist_only=(
+                {"status": "not_measurable_historical_ti_missing", "metrics": None}
+                if not any(r.get("threat") for r in validation)
+                else {
+                    "status": "available_snapshots_only",
+                    "metrics": metrics(
+                        vy,
+                        threat_vector(validation),
+                        concluded=[
+                            r.get("threat", {}).get("status") in {"detected", "not_found"}
+                            for r in validation
+                        ],
+                    ),
+                }
+            ),
         )
         candidates.append((combined["recall"], combined["precision"], name, threshold))
     if not candidates:
@@ -129,13 +140,34 @@ def train(split_dir, output):
         split_manifest_sha256=sha(root / "split-manifest.json"),
         split_files=split_manifest["files"],
         data_versions=data_versions(),
+        feature_code_sha256={
+            name: sha(Path(__file__).parent.parent / name) for name in ("features.py", "urls.py")
+        },
         python=platform.python_version(),
         sklearn=sklearn.__version__,
         positive_definition="high or caution: model above locked threshold OR strong URL rule OR TI detected",
+        evaluation_protocol=protocol,
+        date_precision="source day with +/-14h envelope"
+        if protocol == "retrospective_collection_date"
+        else "event timestamp",
+        development_group_hashes=sorted(
+            {
+                hashlib.sha256(key.encode()).hexdigest()
+                for r in training + validation
+                for key in group_keys(r)
+            }
+        ),
         limitations=[
             "Empirical FPR on validation is not a population guarantee.",
             "Scores are not calibrated phishing probabilities.",
             "No final independent test has yet been performed.",
+            *(
+                [
+                    "Retrospective collection-day holdout. Exact label-decision times and historical TI are unavailable; not evidence for H1."
+                ]
+                if protocol == "retrospective_collection_date"
+                else []
+            ),
         ],
     )
     (out / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf8")

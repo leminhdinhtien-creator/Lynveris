@@ -2,6 +2,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:lynveris/main.dart';
@@ -37,6 +38,11 @@ void main() {
   testWidgets(
     'real backend returns honest insufficient result and actual hostname',
     (tester) async {
+      expect(
+        await const MethodChannel('vn.lynveris/share')
+            .invokeMethod<String>('getPackageName'),
+        'vn.lynveris.lynveris.qa',
+      );
       final store = AppStore(EphemeralStorage());
       await store.load();
       store.onboardingDone = true;

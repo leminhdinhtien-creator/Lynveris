@@ -42,6 +42,17 @@ async def check_url(request: CheckRequest, source, model) -> CheckResult:
         limitations.append(
             "Mô hình học máy chưa sẵn sàng; chưa có đánh giá khả năng phát hiện URL mới."
         )
+    elif (getattr(model, "manifest", None) or {}).get(
+        "evaluation_protocol"
+    ) == "retrospective_collection_date":
+        limitations.append(
+            "Đây là mô hình thử nghiệm, được đánh giá hồi cứu theo ngày thu dữ liệu; chưa kiểm chứng khả năng phát hiện đường link mới chưa có trong nguồn tin đe doạ."
+        )
+    evaluation = getattr(model, "evaluation", None)
+    if evaluation and evaluation["combined"]["fpr"] > 0.05:
+        limitations.append(
+            "Mô hình chưa đạt mục tiêu cảnh báo nhầm tối đa 5% trên tập kiểm thử độc lập. Hãy xác minh thêm qua nguồn chính thức."
+        )
     if threat.status != "detected":
         descriptions = {
             "not_found": "Nguồn tin đe doạ chưa ghi nhận URL; điều đó không chứng minh URL hợp lệ.",
@@ -52,6 +63,10 @@ async def check_url(request: CheckRequest, source, model) -> CheckResult:
             "quota": "Nguồn tin đe doạ đã giới hạn lượt tra cứu; thử lại sau.",
         }
         limitations.append(descriptions[threat.status])
+    if threat.partial:
+        limitations.append(
+            "Một phần nguồn tin đe doạ chưa trả được kết quả; xem trạng thái từng nguồn trong chi tiết."
+        )
     if threat.status == "detected":
         verdict = "high"
         signals.append(
@@ -91,7 +106,9 @@ async def check_url(request: CheckRequest, source, model) -> CheckResult:
         )
         if verdict == "no_signs":
             verdict = "insufficient"
-    if verdict == "no_signs" and threat.status in {"error", "timeout", "quota", "not_configured"}:
+    if verdict == "no_signs" and (
+        threat.partial or threat.status in {"error", "timeout", "quota", "not_configured"}
+    ):
         verdict = "insufficient"
     titles = {
         "high": "Nguy cơ cao",

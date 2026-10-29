@@ -1,6 +1,6 @@
 # Dữ liệu và mô hình
 
-Lynveris dùng cùng hàm `features()` khi train và suy luận. Chưa có model triển khai: dữ liệu đã tải chưa đáp ứng đánh giá theo thời gian. Không có số đo recall, FPR hoặc cải thiện 30 điểm phần trăm trên dữ liệu thật. H1 và H2 của V4 vẫn là giả thuyết chưa được kiểm chứng.
+Lynveris dùng cùng hàm `features()` khi train và suy luận. Đã huấn luyện/triển khai local model thật trên PhreshPhish bằng protocol ngày hồi cứu riêng; [model card và số đo đã khóa](model-run-20261029.md). H1/H2 chưa được kiểm chứng. Các hướng dẫn event-time dưới đây giữ yêu cầu timestamp nghiêm ngặt; không thay ngày tải cho ngày quan sát/gán nhãn.
 
 ## Thu thập và cơ sở gán nhãn
 
@@ -43,7 +43,7 @@ lynveris-evaluate data/splits-v1 artifacts/model-v1 artifacts/test-v1.json
 
 Các ngày trên chỉ minh hoạ cú pháp. Chọn mốc theo dữ liệu thật và khoá trước khi đánh giá; không thay timestamp để khớp ví dụ. Lệnh dừng nếu không đủ dữ liệu. Mặc định mỗi tập train/validation/test cần tối thiểu 50 URL độc lập của mỗi nhãn; đây chỉ là sàn chạy phần mềm, không phải cỡ mẫu đảm bảo độ tin cậy thống kê.
 
-Pipeline khử trùng endpoint và phát hiện gần trùng bằng hostname/path đã thay ID số và tên tham số; giữ nguyên URL nguồn. Các miền đăng ký (PSL gồm private suffix), chiến dịch và endpoint gần trùng được nối thành thành phần liên thông trước khi tách. Mỗi nhóm chỉ xuất hiện trong tập thời gian sớm nhất; các hàng chồng lấn ở tập sau bị loại và đếm trong audit. Đây là phép kiểm tra bảo thủ, vẫn có thể bỏ sót chiến dịch chưa được nhận dạng. Không giải mã/chuẩn hoá lại URL dùng để truy cập.
+Pipeline khử trùng URL nguyên bản giống hệt, chỉ nhóm gần trùng bằng hostname/path đã thay ID số và tên tham số; giữ nguyên URL nguồn. Các miền đăng ký (PSL gồm private suffix), chiến dịch và endpoint gần trùng được nối thành thành phần liên thông trước khi tách. Mỗi nhóm chỉ xuất hiện trong tập thời gian sớm nhất; các hàng chồng lấn ở tập sau bị loại và đếm trong audit. Đây là phép kiểm tra bảo thủ, vẫn có thể bỏ sót chiến dịch chưa được nhận dạng. Không giải mã/chuẩn hoá lại URL dùng để truy cập.
 
 Nhãn được biết sau mốc train hoặc validation không dùng ở tập trước mốc đó. `train` chỉ đọc train và validation, xác minh hash/các mốc, thử Logistic Regression và HistGradientBoosting, chọn mô hình cùng ngưỡng trên validation. Không refit bằng validation sau khi chọn ngưỡng. Chính sách dương tính cuối cùng là: **Nguy cơ cao hoặc Cần thận trọng**, tương ứng phát hiện từ nguồn ngoài, luật URL mạnh hoặc điểm mô hình vượt ngưỡng. FPR của phép kết hợp này phải ≤5% trên validation; nếu luật hoặc nguồn làm vượt mức thì training từ chối xuất artifact. Không có nút bí mật để dùng test sửa ngưỡng.
 
@@ -53,7 +53,7 @@ Nhãn được biết sau mốc train hoặc validation không dùng ở tập t
 
 ## Các phần cần dữ liệu thật
 
-- Chưa đủ dữ liệu hai nhãn với timestamp, nguồn và quyền sử dụng phù hợp cho cả ba giai đoạn.
+- Có hai nhãn cho benchmark ngày hồi cứu; chưa có exact label-decision timestamps cho đánh giá triển khai lịch sử nghiêm ngặt.
 - Chưa có snapshot blacklist lịch sử để đánh giá khả năng phát hiện URL mới.
 - Bộ hồi quy thiết kế tách khỏi test cuối. Các lỗi thực sự quan sát trong phát triển được thêm vào test có tên; chưa có 10 lỗi nhận diện thực địa, không tạo cho đủ số lượng.
 - Kiểm thử vòng đời training dùng dữ liệu tổng hợp trong thư mục tạm pytest. Artifact/điểm của kiểm thử đó không được đóng gói vào ứng dụng hoặc coi là model thật.

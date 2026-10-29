@@ -17,6 +17,8 @@ class MainActivity : FlutterActivity() {
             if (call.method == "getInitialText") {
                 result.success(pendingText)
                 pendingText = null
+            } else if (call.method == "getPackageName") {
+                result.success(packageName)
             } else result.notImplemented()
         }
     }

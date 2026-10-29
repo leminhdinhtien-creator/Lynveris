@@ -148,7 +148,9 @@ def _confusables():
 
 @lru_cache(maxsize=2048)
 def skeleton(value: str) -> str:
-    # UTS #39 section 4: NFD -> confusables mapping -> NFD. No URL rewriting.
+    # Tailored comparison for IDNA-validated brand labels: NFD -> map -> NFD.
+    # This is not full UTS39 v17 bidiSkeleton/Script_Extensions conformance.
+    # The skeleton never rewrites the URL sent to a lookup source.
     nfd = unicodedata.normalize("NFD", value)
     return unicodedata.normalize("NFD", "".join(_confusables().get(c, c) for c in nfd))
 

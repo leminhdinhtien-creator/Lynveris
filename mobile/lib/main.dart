@@ -1107,6 +1107,17 @@ class _ResultPageState extends State<ResultPage> {
                         '${threat['source']}: ${threatStatus(threat['status'])}',
                         style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
+                      if (threat['partial'] == true)
+                        const Text('Tra cứu chưa đầy đủ ở một phần nguồn.'),
+                      for (final check in (threat['checks'] as List? ?? []))
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8, bottom: 8),
+                          child: Text(
+                            '${check['source']}: ${threatStatus(check['status'])}'
+                            '${check['checked_at'] != null ? '\nTra lúc: ${formatTime(check['checked_at'])}' : ''}'
+                            '${check['cached'] == true ? '\nCache còn hạn tại lúc kiểm tra.' : ''}',
+                          ),
+                        ),
                       if (threat['checked_at'] != null)
                         Text(
                           'Thời điểm tra: ${formatTime(threat['checked_at'])}',
@@ -1151,6 +1162,10 @@ class _ResultPageState extends State<ResultPage> {
                       Text(
                         'Mô hình: ${model['status'] == 'ready' ? model['version'] : 'Chưa sẵn sàng'}',
                       ),
+                      if (model['release_stage'] == 'research')
+                        const Text(
+                          'Mô hình thử nghiệm · vẫn có thể bỏ sót hoặc cảnh báo nhầm.',
+                        ),
                       if (model['score'] != null)
                         Text(
                           'Điểm phân loại: ${model['score'].toStringAsFixed(3)} · ngưỡng ${model['threshold']}\nKhông phải xác suất lừa đảo.',

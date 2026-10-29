@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:lynveris/api.dart';
@@ -31,6 +32,13 @@ void main() {
   testWidgets(
     'live product, source, persistence, PostgreSQL and network failures',
     (tester) async {
+      final package = await const MethodChannel('vn.lynveris/share')
+          .invokeMethod<String>('getPackageName');
+      expect(
+        package,
+        'vn.lynveris.lynveris.qa',
+        reason: 'Abort before accessing user preferences unless this is the isolated QA app.',
+      );
       Future<void> waitFor(
         bool Function() condition, {
         int seconds = 25,
@@ -59,6 +67,15 @@ void main() {
       store.apiBase = 'http://10.0.2.2:8000';
       await store.persist();
       final api = LiveApi();
+      addTearDown(() async {
+        // This is the verified QA package's own token, never the user's main app.
+        store.apiBase = 'http://10.0.2.2:8000';
+        try {
+          await api.deleteResearch(store);
+        } catch (_) {
+          // Keep the original failure; server outage cannot be reported as successful cleanup.
+        }
+      });
       await tester.pumpWidget(LynverisApp(store: store, api: api));
       await tester.pumpAndSettle();
       await binding.convertFlutterSurfaceToImage();
@@ -77,12 +94,18 @@ void main() {
       }
 
       await check('https://example.org/?private=qa-only', 1);
-      expect(find.text('Chưa đủ thông tin'), findsOneWidget);
+      expect(api.results.last['model']['status'], 'ready');
+      expect(find.text(api.results.last['title']), findsOneWidget);
       expect(api.results.last['threat']['status'], 'not_found');
-      await capture('lynveris-insufficient');
+      expect(api.results.last['threat']['checks'].length, 2);
+      await capture('lynveris-model-result');
       await tapText('Nguồn và giới hạn kiểm tra');
-      expect(find.textContaining('OpenPhish Community:'), findsOneWidget);
-      expect(find.text('Mô hình: Chưa sẵn sàng'), findsOneWidget);
+      expect(find.textContaining('OpenPhish Community:'), findsWidgets);
+      expect(find.textContaining('Google Safe Browsing:'), findsWidgets);
+      expect(
+        find.text('Mô hình: ${api.results.last['model']['version']}'),
+        findsOneWidget,
+      );
       await capture('lynveris-details');
       await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
@@ -124,6 +147,22 @@ void main() {
       await tapText('Xoá');
       expect(store.history, isEmpty);
 
+      // Actual secondary API: Google deliberately unconfigured; OpenPhish remains live.
+      await tapText('Kiểm tra');
+      store.apiBase = 'http://10.0.2.2:8003';
+      store.researchConsent = false;
+      store.saveHistory = false;
+      await check('https://example.org/', 4);
+      expect(api.results.last['threat']['partial'], isTrue);
+      expect(
+        api.results.last['threat']['checks'][0]['status'],
+        'not_configured',
+      );
+      await tapText('Nguồn và giới hạn kiểm tra');
+      await capture('lynveris-source-unavailable');
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+
       // These are real TCP failure paths: closed port and a socket which accepts but never replies.
       await tapText('Kiểm tra');
       store.apiBase = 'http://10.0.2.2:8002';
@@ -145,14 +184,16 @@ void main() {
             .isNotEmpty,
       );
       await capture('lynveris-timeout');
-      expect(api.results.length, 3);
+      expect(api.results.length, 4);
       store.apiBase = 'http://10.0.2.2:8000';
       await tapText('Cài đặt');
       await capture('lynveris-settings');
       // Collector independently reads these exact result IDs from real PostgreSQL before deletion.
       await File('${Directory.systemTemp.path}/qa-proof.json').writeAsString(
         jsonEncode({
-          'ids': api.results.map((e) => e['id']).toList(),
+          'ids': api.results.take(3).map((e) => e['id']).toList(),
+          'model': api.results.first['model']['version'],
+          'source': api.results.first['threat']['source'],
           'screenshots': screenshots,
         }),
       );

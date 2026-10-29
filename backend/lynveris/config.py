@@ -12,5 +12,5 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = 30
     auto_create_dev_database: bool = True
     retention_cleanup_enabled: bool = True
-    threat_provider: Literal["google", "openphish"] = "google"
+    threat_provider: Literal["google", "openphish", "combined"] = "google"
     openphish_academic_use: bool = False

@@ -1,26 +1,27 @@
 # Kiểm tra sản phẩm
 
-Ngày kiểm tra: **29/10/2026, múi giờ Việt Nam**. Chạy trực tiếp trên Windows của máy phát triển, không phải cloud/WSL. Đây là kết quả chạy phần mềm, không phải đánh giá chất lượng nhận diện trên dữ liệu thực địa. Test có AI hỗ trợ; không nhận là test do sinh viên tự viết.
+Ngày kiểm tra: **29/10/2026, múi giờ Việt Nam**. Chạy trực tiếp trên Windows, không phải cloud/WSL. [Model card hiện tại](model-run-20261029.md) có benchmark thật và giới hạn; không phải pilot người dùng. Test có AI hỗ trợ; không nhận là test do sinh viên tự viết. Đã chạy lại Android với model thật và cả hai nguồn trong package QA riêng.
 
 ## Đã xác minh tại máy phát triển
 
 | Phạm vi | Kết quả thực tế |
 |---|---|
-| Backend `pytest backend/tests` | **114 passed**; gồm hồi quy chế độ giữ dữ liệu cũ và adapter OpenPhish |
+| Backend `pytest backend/tests` | **130 passed** ở lần chạy sau thêm protocol/collector/combined sources/evaluation accounting; có kiểm tra giữ dữ liệu cũ |
 | Ruff check/format | Đạt với backend và scripts |
 | Flutter analyze | Không phát hiện lỗi |
 | Flutter unit/widget | **15 passed**, gồm API client, chọn dữ liệu gửi, lỗi mạng, trích URL, lưu/xoá/ẩn thông tin lịch sử, lỗi lưu thiết bị, điều hướng, nhận Share khi đang xem kết quả/đang chờ API, hai lượt kiểm tra liên tiếp và cỡ chữ 150% trên màn hình nhỏ |
-| Android → FastAPI → PostgreSQL thật | Ca `product_flow_test.dart` đạt trên Small_Phone/emulator-5554: URL thường trả thiếu thông tin, userinfo giả hostname trả thận trọng, một URL đang có trong feed OpenPhish trả nguy cơ cao. Collector đọc đúng ba ID phản hồi Flutter từ SQL, sau đó xác nhận việc xoá qua Flutter và bảo toàn các ID có sẵn |
+| Android → FastAPI → PostgreSQL thật | `product_flow_test.dart` đạt với model20261029T135127Z trên Small_Phone/emulator-5554, package QA. Hai nguồn not_found, userinfo giả mạo caution, URL feed detected/high, chi tiết/model/history/save/delete đều kiểm tra thật. Collector đọc đúng ba ID từ SQL và xác nhận xóa đúng dữ liệu thử, giữ ID cũ. 10 screenshot ở `artifacts/screenshots-current/` |
 | PostgreSQL 18.6 trên máy | Database `lynveris`, cổng **5432**, migration **0001_minimal_events**. Role `lynveris_app` có SELECT/INSERT/DELETE, không superuser/createdb/createrole/schema CREATE/TRUNCATE. Mật khẩu quản trị nhập tại cửa sổ local, không lưu; `.env` chứa riêng thông tin role runtime, bị gitignore và giới hạn ACL |
 | Lịch sử trên Android | Lưu thật qua SharedPreferences, tạo AppStore mới đọc lại đủ ba mục, ẩn path/query, mở lại chi tiết, xoá một mục và xoá hết dữ liệu thử đều đạt |
 | Mất kết nối và timeout trên Android | Thử cổng đóng và TCP nhận kết nối nhưng không phản hồi: UI báo chưa kiểm tra/quá thời gian chờ, không tạo kết quả và không lưu thêm thống kê |
-| Nguồn thật | OpenPhish Community: tải HTTPS thật 300 URL, đối chiếu có/không có trong feed. Không truy cập URL phishing, không dùng transport giả ở runtime. Google thiếu khoá trả `not_configured` và kết quả thiếu thông tin |
+| Nguồn không cấu hình trên Android | Secondary API thực có Google key rỗng và OpenPhish live: UI hiện partial và Google not_configured; không có transport/kết quả giả |
+| Nguồn thật | Google key thật đã tạo/restrict API/lưu local. API provider `combined` gọi cả Google và OpenPhish; URL đối chứng not_found, URL feed detected, từng child status có thời gian thật. Có Google live detected riêng; không dùng mock runtime hoặc attribution nhầm nguồn |
 | SQLite phát triển | Schema check không có thay đổi chưa migrate |
 | APK ứng dụng thường | Build debug thành công. Bản trong `artifacts/lynveris-debug.apk` được kiểm tra không chứa entrypoint integration test; không dùng APK test runner để bàn giao |
 | Docker Compose trên CI | Build image, chạy migrations/PostgreSQL/API bằng Compose, chờ healthy và gọi `/ready` đã đạt |
 | GitHub CI | Cả backend và Flutter đã **success** tại commit `8a179ff9197b60b01fea483864de8b6bbc8aca86`: [run 40710865943](https://github.com/leminhdinhtien-creator/Lynveris/actions/runs/40710865943) |
 | Flutter web | Build cuối thành công với `--no-web-resources-cdn`; đã kiểm tra giao diện và gọi API thật bằng trình duyệt |
-| Dữ liệu thật | Collector xác nhận 235.795 dòng UCI: nhãn gốc 100.945 phishing / 134.850 legitimate. Manifest ở `data/phiusiil-quarantine/manifest.json`; không đưa vào train temporal do thiếu timestamp từng dòng |
+| Dữ liệu/model thật | PhreshPhish 83.176 mẫu, temporal collection-day holdout, model thật ready trong API. Test 14.073: recall78,00%, precision95,81%, FPR5,03% (chưa đạt5%); historical TI thiếu, H1 chưa chứng minh. UCI tiếp tục cách ly |
 
 Một cảnh báo thư viện Starlette về việc tương lai chuyển test client từ httpx sang httpx2 còn xuất hiện; hiện 109 test chạy đạt với bộ phiên bản khoá. Gradle/JDK 25 phát cảnh báo native access; build debug vẫn thành công. Không dùng các cảnh báo này làm bằng chứng ứng dụng đã chạy trên mọi thiết bị.
 
@@ -29,7 +30,7 @@ Một cảnh báo thư viện Starlette về việc tương lai chuyển test cl
 - Phân tách scheme, userinfo, hostname, port, path, query, fragment; không thay URL gốc, không giải mã lặp; từ chối URL mơ hồ/control/numeric IP viết tắt.
 - PSL nhiều cấp, private hosting như github.io/pages.dev/blogspot.com; Unicode hợp lệ, chữ Việt, Greek/Cyrillic confusables, typo/thêm bớt/đảo chữ, subdomain/userinfo giả mạo và query chứa địa chỉ khác.
 - Bộ hồi quy phát triển **38 tình huống thiết kế**, không phải 38 mẫu thực địa đã được gán nhãn; cộng các ca lỗi cấu trúc và thành phần khác. Không dùng làm test nghiên cứu cuối.
-- Provider tests dùng **httpx MockTransport**, kiểm tra phát hiện/không tìm thấy/thiếu cấu hình/lỗi/timeout/quota/cache và phản hồi sai định dạng. Chưa kiểm tra Google live bằng khoá thật.
+- Provider unit tests dùng **httpx MockTransport** riêng, kiểm tra lỗi/timeout/quota/cache/schema; live API dùng HTTPS thật. Combined kiểm tra cả hai nguồn song song, expiry, partial failure và Google attribution đúng nguồn.
 - Kiểm tra SSRF theo kiến trúc không truy cập URL đích: private IP, metadata và IPv6 chỉ được phân tích, redirect luôn `not_requested`. Chưa triển khai hoặc tuyên bố resolver chống rebinding.
 - Pipeline test dùng fixture tổng hợp trong thư mục tạm: provenance thiếu, timestamp tương lai, blacklist không đúng thời điểm, nhóm miền/chiến dịch liên thông, chọn ngưỡng với FPR của toàn bộ phép kết hợp, train/load/evaluate và khoá test một lần. Đây là kiểm tra vòng đời phần mềm, không có model thật từ các fixture đó trong ứng dụng.
 
@@ -46,10 +47,14 @@ Một cảnh báo thư viện Starlette về việc tương lai chuyển test cl
 
 Chưa có **10 lỗi nhận diện thực địa** được quan sát và gán nhãn. Không bịa lỗi hoặc lấy lỗi cài đặt làm số đo chất lượng phát hiện. Khi có lỗi thật, thêm bằng chứng đã ẩn thông tin vào tập phát triển và giữ tập test cuối độc lập.
 
+Lần đầu cờ QA không được truyền tới entrypoint listener do Flutter test tạo, một mục thử đã vào package chính. Đã dừng trước xóa lịch sử, khôi phục **đúng binary preferences trước test**, SHA256 trùng snapshot ban đầu, xóa đúng một row thử. Sau đó thêm prebuild/kiểm tra APK identity, nhận diện integration define và native package guard trước đọc/ghi preferences. Guard đã chặn một lượt sai package; lượt QA cuối đạt, preferences package chính vẫn cùng hash. Không reset/gỡ package chính.
+
+URL đối chứng thiết kế `example.org` có query thử bị model cảnh báo thận trọng dù cả hai nguồn not_found; đây là false positive đối chứng, không phải lỗi thực địa được gán nhãn. Giữ model/ngưỡng khóa, không thêm whitelist hoặc sửa theo test; giới hạn mô hình thử nghiệm được hiển thị. Các URL IANA help, Wikipedia root và Microsoft Windows kiểm tra thêm trả no_signs, không dùng vài đối chứng này thay số đo test.
+
 ## Chưa xác minh hoặc còn chặn
 
-- **Google live:** cần `LYNVERIS_GOOGLE_API_KEY` hợp lệ ở backend và chọn provider `google`; hiện chỉ xác minh hợp đồng adapter bằng mock và trạng thái thiếu cấu hình thật. Runtime hiện dùng OpenPhish Community cho nghiên cứu, không có mock thay thế trong ứng dụng. Điều khoản OpenPhish không cho tự do phân phối lại feed hoặc sử dụng thương mại.
-- **Model và H1:** cần dữ liệu hai nhãn có timestamp/bằng chứng/quyền sử dụng, đủ ba giai đoạn và snapshot blacklist đương thời. Chưa có model triển khai; chưa đo precision/recall/F1/FPR thật, URL mới, coverage nghiên cứu hoặc mức cải thiện +30 điểm phần trăm.
+- **Google:** đã có key thật local, không cần người dùng cung cấp thêm. Nguồn có thể lỗi/quota và được hiển thị partial; OpenPhish vẫn có giới hạn terms academic/no redistribution.
+- **H1:** model đã triển khai/đo thật nhưng FPR test5,03% vượt5%, thiếu historical TI và exact label-decision timestamps. Không sửa theo test; nâng model cần test độc lập mới và thêm benign khó. Prospective collection đã bắt đầu, chưa đủ hai nhãn để xác nhận H1.
 - **Docker tại máy này:** không có Docker CLI/daemon; chạy container đã được xác minh trên GitHub CI thay thế. PostgreSQL native cũng đã chạy đạt riêng.
 - **Thiết bị thật:** đã kiểm tra emulator; chưa xác minh Android Share từ từng ứng dụng nguồn, share sheet/OEM, bàn phím và khả năng đọc trên điện thoại vật lý/người dùng gia đình. Không có thử nghiệm pilot hoặc chỉ số H2 trong phạm vi bàn giao.
 

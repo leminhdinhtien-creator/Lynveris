@@ -13,6 +13,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.concurrency import run_in_threadpool
 
+from .combined_sources import CombinedSources
 from .config import Settings
 from .database import Base, cleanup, delete_events, engine_for, record_event
 from .model import UrlModel
@@ -78,11 +79,13 @@ class RequestGuard:
 def create_app(settings: Settings | None = None):
     settings = settings or Settings()
     engine = engine_for(settings.database_url)
-    source = (
-        OpenPhishCommunity(settings.openphish_academic_use)
-        if settings.threat_provider == "openphish"
-        else GoogleSafeBrowsing(settings.google_api_key)
-    )
+    google = GoogleSafeBrowsing(settings.google_api_key)
+    openphish = OpenPhishCommunity(settings.openphish_academic_use)
+    source = {
+        "google": google,
+        "openphish": openphish,
+        "combined": CombinedSources(google, openphish),
+    }[settings.threat_provider]
     model = UrlModel(settings.model_directory)
 
     @asynccontextmanager
@@ -142,11 +145,11 @@ def create_app(settings: Settings | None = None):
             "status": "ready",
             "model": "ready" if model.pipeline is not None else "unavailable",
             "threat": "configured"
-            if (
-                settings.openphish_academic_use
-                if settings.threat_provider == "openphish"
-                else bool(settings.google_api_key)
-            )
+            if {
+                "google": bool(settings.google_api_key),
+                "openphish": settings.openphish_academic_use,
+                "combined": bool(settings.google_api_key) and settings.openphish_academic_use,
+            }[settings.threat_provider]
             else "not_configured",
             "threat_provider": settings.threat_provider,
             "redirects": "disabled",

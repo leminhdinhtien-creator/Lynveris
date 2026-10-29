@@ -14,6 +14,11 @@ def main():
     parser.add_argument("device")
     parser.add_argument("--wait-seconds", type=int, default=600)
     parser.add_argument("--product", action="store_true")
+    parser.add_argument(
+        "--package",
+        choices=["vn.lynveris.lynveris", "vn.lynveris.lynveris.qa"],
+        default="vn.lynveris.lynveris.qa",
+    )
     parser.add_argument("--output", default="artifacts/screenshots")
     parser.add_argument(
         "--adb",
@@ -43,7 +48,7 @@ def main():
                     args.device,
                     "exec-out",
                     "run-as",
-                    "vn.lynveris.lynveris",
+                    args.package,
                     "cat",
                     f"{candidate}/qa-ready",
                 ],
@@ -63,7 +68,7 @@ def main():
 
     def remote(*command):
         return subprocess.run(
-            [args.adb, "-s", args.device, "exec-out", "run-as", "vn.lynveris.lynveris", *command],
+            [args.adb, "-s", args.device, "exec-out", "run-as", args.package, *command],
             capture_output=True,
             check=True,
             timeout=30,
@@ -105,7 +110,7 @@ def main():
                 args.device,
                 "exec-out",
                 "run-as",
-                "vn.lynveris.lynveris",
+                args.package,
                 "cat",
                 f"{remote_directory}/{name}.png",
             ],
@@ -126,7 +131,7 @@ def main():
             args.device,
             "exec-out",
             "run-as",
-            "vn.lynveris.lynveris",
+            args.package,
             "touch",
             f"{remote_directory}/qa-collected",
         ],
@@ -158,8 +163,9 @@ def main():
                     "insert_read_delete": "passed",
                     "preserved_preexisting_rows": True,
                     "emulator": args.device,
-                    "source": "OpenPhish Community",
-                    "model": None,
+                    "package": args.package,
+                    "source": proof["source"],
+                    "model": proof["model"],
                     "screenshots": names,
                 },
                 indent=2,

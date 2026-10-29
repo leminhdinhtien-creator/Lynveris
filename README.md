@@ -2,7 +2,7 @@
 
 Ứng dụng Android giúp gia đình kiểm tra đường link trong tin nhắn, nhìn rõ hostname thực tế và hiểu lý do cần thận trọng. Flutter → FastAPI → phân tích cấu trúc URL, Unicode, mô hình nếu đã được huấn luyện, và nguồn tin đe doạ khi người dùng bật tra nguồn. Có adapter Google Safe Browsing và OpenPhish Community cho nghiên cứu học thuật/cá nhân. Không cần tài khoản; không đọc SMS, danh bạ hoặc clipboard trong nền; không tự mở link.
 
-**Trạng thái:** có luồng ứng dụng/API chạy thật, bộ phân tích, lịch sử tuỳ chọn, chia sẻ hệ điều hành, PostgreSQL migrations, pipeline train/evaluate, Docker Compose và CI. PostgreSQL 18 local tại cổng 5432 đã được kết nối bằng tài khoản ứng dụng riêng và kiểm tra ghi/đọc/xoá. OpenPhish đã được đối chiếu bằng feed HTTPS thật. Chưa có model được huấn luyện trên bộ dữ liệu thật đủ timestamp; chưa xác minh Google live vì chưa cấu hình API key. Không tuyên bố đạt recall +30 điểm phần trăm hoặc FPR ≤5%. [Kết quả kiểm tra và giới hạn](docs/verification.md) ghi riêng từng phần đã xác minh.
+**Trạng thái local 29/10/2026:** PostgreSQL 18 đã kết nối bằng role riêng; API đang dùng HistGradientBoosting thật từ metadata PhreshPhish có nhãn và ngày thu thập. Google Safe Browsing và OpenPhish chạy kết hợp thật, khoá chỉ lưu local. Test độc lập 14.073 đầu vào: recall 78,00%, precision 95,81%, FPR **5,03%**, chưa đạt mục tiêu 5%. Model ở mức thử nghiệm, không tuyên bố đạt H1. Thiếu timestamp gán nhãn chính xác và blacklist lịch sử nên chỉ là benchmark hồi cứu theo ngày thu dữ liệu. [Chi tiết model/dữ liệu](docs/model-run-20261029.md), [nguồn áp dụng](docs/sources-applied.md). Model/corpus/secret local không nằm trong Git; checkout mới không tự có model.
 
 Đề tài: **Phát triển Lynveris: ứng dụng cảnh báo đường link lừa đảo trong tin nhắn cho gia đình dựa trên đặc trưng URL và nguồn tin đe doạ.** Tên SafeGuard trong V4 được đổi thành Lynveris theo yêu cầu hiện tại. CH1/H1 về phát hiện URL mới và CH2/H2 về khả năng nhận diện của người dùng được giữ nguyên; chưa có kết quả thực nghiệm cho hai giả thuyết. Repository chỉ triển khai sản phẩm và tài liệu kỹ thuật.
 
@@ -47,6 +47,8 @@ OpenPhish Community không cần khoá. Chỉ dùng cho nghiên cứu học thu�
 
 Tạo khoá backend theo [tài liệu chính thức](https://developers.google.com/safe-browsing/v4/lookup-api), bật dịch vụ và cấu hình `LYNVERIS_GOOGLE_API_KEY` cùng `LYNVERIS_THREAT_PROVIDER=google` trong `.env`. Không gửi khoá vào chat, commit hoặc APK. Khởi động lại API; người dùng bật **Tra nguồn tin đe doạ** trong Cài đặt sau khi đọc nội dung gửi dữ liệu. API key không được yêu cầu để phân tích cấu trúc URL hoặc dùng OpenPhish cho nghiên cứu.
 
+Máy local đã tạo khoá giới hạn cho Safe Browsing API, không cần nhập lại. `LYNVERIS_THREAT_PROVIDER=combined` dùng Google và OpenPhish song song (cần academic opt-in). Chi tiết hiện trạng thái từng nguồn, không che một nguồn lỗi thành kết quả hai nguồn không phát hiện. Chỉ Google hit mới có attribution Google.
+
 Safe Browsing dùng cho mục đích phi thương mại theo [điều khoản](https://developers.google.com/safe-browsing/v4/terms). Nếu chuyển sang sản phẩm thương mại cần chọn dịch vụ có điều khoản phù hợp. Cache tuân thủ thời hạn; cảnh báo Google có attribution và URL advisory. Chưa ghi nhận trong nguồn không đồng nghĩa an toàn. Thiếu khoá, timeout, quota và lỗi đều được trả riêng, không thay bằng kết quả giả.
 
 ## Docker và PostgreSQL
@@ -70,17 +72,18 @@ cd mobile
 dart format --output=none --set-exit-if-changed lib test integration_test
 flutter analyze
 flutter test
-flutter test integration_test/api_flow_test.dart -d <emulator-id> --dart-define=API_BASE_URL=http://10.0.2.2:8000
+..\scripts\test-android-product.ps1 -Device <emulator-id> -MobileDirectory (Get-Location).Path
 flutter build apk --debug
 flutter build web --no-web-resources-cdn --dart-define=API_BASE_URL=http://127.0.0.1:8000
 ```
 
-Integration test cần API thật đang chạy, không cấu hình model và không bật Google. Nó xác minh kết quả thiếu thông tin và hostname giả mạo trước dấu @. Để thu ảnh giao diện từ thiết bị kiểm thử:
+`api_flow_test.dart` dành cho backend không-model/không-tra-nguồn. `product_flow_test.dart` dành cho model thật, hai nguồn và PostgreSQL. **Chạy qua `scripts/test-android-product.ps1`**: prebuild và kiểm tra package QA trước khi khởi động Flutter test, tránh runner ghi nhớ APK chính cũ rồi gỡ nhầm khi kết thúc. Gradle nhận cả target test và define tích hợp do Flutter3.47 tự thêm, không chỉ biến môi trường. Native guard kiểm tra package trước khi đọc/ghi preferences. Collector nhận `--product --package vn.lynveris.lynveris.qa`. Không chạy lệnh integration trực tiếp khi APK hiện tại là package chính. Ví dụ ca không-model chỉ sau khi đã prebuild/kiểm tra QA:
 
 ```powershell
 # Terminal 1, tại root: chờ và thu đúng 3 ảnh do test tạo trong app debug.
 .\.venv\Scripts\python.exe scripts/collect_test_screenshots.py <emulator-id>
 # Terminal 2, tại mobile:
+$env:ORG_GRADLE_PROJECT_lynverisQa='true'
 flutter test integration_test/api_flow_test.dart -d <emulator-id> --dart-define=API_BASE_URL=http://10.0.2.2:8000 --dart-define=CAPTURE_QA=true
 ```
 

@@ -9,7 +9,7 @@ Flutter trích URL trên thiết bị và chỉ gửi URL đã chọn đến Fas
 - Không cache trạng thái "an toàn". Cache provider lưu HMAC của URL với salt trong RAM; không lưu URL. Kết quả Google dương tính tuân thủ TTL, tối đa 30 phút. Lỗi/timeout/quota/thiếu cấu hình có trạng thái riêng. Không tìm thấy trong nguồn không chứng minh URL hợp lệ.
 - Khoá Google chỉ ở backend; không đặt trong Dart, APK, Git hoặc tham số CLI. Adapter gọi endpoint cố định qua HTTPS, timeout, tối đa hai lần thử, đồng thời tối đa tám, cooldown quota, không theo redirect. Dịch vụ này chỉ dùng cho đề tài phi thương mại theo điều khoản đã đối chiếu.
 - Danh mục chính thức là bằng chứng đối chiếu danh tính, không phải allowlist. Không bỏ qua path/query hay nguồn ngoài trên host chính thức. Thiếu thương hiệu trong danh mục không chứng minh nguy hiểm; danh mục hiện không đầy đủ.
-- Skeleton Unicode dùng phép NFD → bảng confusables → NFD của UTS #39 để so sánh, không sửa URL. Tín hiệu bảng chữ chỉ mô tả Latin/Greek/Cyrillic thông qua Unicode names của Python; không tuyên bố thực hiện toàn bộ profile nhận dạng UTS #39. Unicode tiếng Việt và IDN không tự trở thành cảnh báo mạnh.
+- Skeleton dùng tailoring NFD → confusables17 → NFD trên IDNA brand labels; không sửa URL, chưa triển khai full v17 bidiSkeleton/Default_Ignorable/Script_Extensions. Bảng chữ Latin/Greek/Cyrillic dựa Unicode names của Python, không tuyên bố full UTS39 conformance. Unicode tiếng Việt và IDN không tự trở thành cảnh báo mạnh.
 
 ## Các mức kết quả
 

@@ -24,6 +24,8 @@ class ThreatResult(BaseModel):
     categories: list[str] = Field(default_factory=list)
     attribution: str | None = None
     advisory_url: str | None = None
+    partial: bool = False
+    checks: list["ThreatResult"] = Field(default_factory=list)
 
 
 class ModelResult(BaseModel):
@@ -34,6 +36,7 @@ class ModelResult(BaseModel):
     score: float | None = None  # classifier score, deliberately not called probability
     threshold: float | None = None
     alert: bool = False
+    release_stage: Literal["research"] | None = None
 
 
 class CheckRequest(BaseModel):

@@ -62,6 +62,14 @@ def test_campaign_aliases_are_grouped_transitively_before_splitting():
     assert audit["excluded_overlap"] == 2
 
 
+def test_different_query_values_are_grouped_not_deleted_as_duplicate_labels():
+    good = record("https://shared.example/view?document=legitimate")
+    phish = record("https://shared.example/view?document=phishing")
+    phish["label"] = 1
+    parts, audit = partition([good, phish], "2026-02-01T00:00:00Z", "2026-04-01T00:00:00Z")
+    assert len(parts["train"]) == 2 and audit["duplicates"] == 0
+
+
 def test_threshold_uses_fpr_constraint_and_combined_policy():
     y = [0, 0, 0, 1, 1]
     scores = fused_scores([0.1, 0.2, 0.3, 0.8, 0.9], [False] * 5)
