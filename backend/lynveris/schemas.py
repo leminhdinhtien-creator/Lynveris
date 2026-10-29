@@ -18,6 +18,7 @@ class ThreatResult(BaseModel):
         "detected", "not_found", "error", "timeout", "quota", "not_configured", "skipped"
     ]
     checked_at: datetime | None = None
+    feed_received_at: datetime | None = None
     expires_at: datetime | None = None
     cached: bool = False
     categories: list[str] = Field(default_factory=list)

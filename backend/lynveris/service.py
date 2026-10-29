@@ -28,7 +28,10 @@ async def check_url(request: CheckRequest, source, model) -> CheckResult:
     threat = (
         await source.check(p.fetch_url)
         if request.use_threat_intelligence
-        else ThreatResult(status="skipped")
+        else ThreatResult(
+            status="skipped",
+            source=getattr(source, "SOURCE", "Google Safe Browsing"),
+        )
     )
     signals = inspection.signals
     limitations = [
@@ -42,8 +45,8 @@ async def check_url(request: CheckRequest, source, model) -> CheckResult:
     if threat.status != "detected":
         descriptions = {
             "not_found": "Nguồn tin đe doạ chưa ghi nhận URL; điều đó không chứng minh URL hợp lệ.",
-            "skipped": "Chưa gửi URL sang nguồn tin đe doạ vì bạn chưa bật tra nguồn.",
-            "not_configured": "Máy chủ chưa cấu hình khoá Google Safe Browsing.",
+            "skipped": "Chưa tra nguồn tin đe doạ vì bạn chưa bật tra nguồn.",
+            "not_configured": "Nguồn tin đe doạ chưa được cấu hình trên máy chủ.",
             "error": "Nguồn tin đe doạ gặp lỗi; chưa có kết quả tra cứu.",
             "timeout": "Tra nguồn quá thời gian chờ; chưa có kết quả.",
             "quota": "Nguồn tin đe doạ đã giới hạn lượt tra cứu; thử lại sau.",
@@ -55,7 +58,8 @@ async def check_url(request: CheckRequest, source, model) -> CheckResult:
             Signal(
                 code="threat_match",
                 title="Nguồn tin ghi nhận nguy cơ",
-                detail="Google Safe Browsing ghi nhận nguy cơ có thể xảy ra: "
+                detail=threat.source
+                + " ghi nhận nguy cơ có thể xảy ra: "
                 + ", ".join(threat.categories),
                 severity="strong",
                 source="threat",

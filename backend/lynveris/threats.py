@@ -23,6 +23,7 @@ class ThreatSource(Protocol):
 
 
 class GoogleSafeBrowsing:
+    SOURCE = "Google Safe Browsing"
     ENDPOINT = "https://safebrowsing.googleapis.com/v4/threatMatches:find"
 
     def __init__(self, api_key: str, transport=None):

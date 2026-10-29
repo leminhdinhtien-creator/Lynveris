@@ -12,8 +12,16 @@ if context.is_offline_mode():
     with context.begin_transaction():
         context.run_migrations()
 else:
-    engine = create_engine(url, poolclass=pool.NullPool)
-    with engine.connect() as connection:
+    supplied_connection = config.attributes.get("connection")
+
+    def migrate(connection):
         context.configure(connection=connection, target_metadata=target_metadata)
         with context.begin_transaction():
             context.run_migrations()
+
+    if supplied_connection is not None:
+        migrate(supplied_connection)
+    else:
+        engine = create_engine(url, poolclass=pool.NullPool)
+        with engine.connect() as connection:
+            migrate(connection)

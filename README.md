@@ -1,8 +1,8 @@
 # Lynveris
 
-Ứng dụng Android giúp gia đình kiểm tra đường link trong tin nhắn, nhìn rõ hostname thực tế và hiểu lý do cần thận trọng. Flutter → FastAPI → phân tích cấu trúc URL, Unicode, mô hình nếu đã được huấn luyện, và Google Safe Browsing khi người dùng bật tra nguồn. Không cần tài khoản; không đọc SMS, danh bạ hoặc clipboard trong nền; không tự mở link.
+Ứng dụng Android giúp gia đình kiểm tra đường link trong tin nhắn, nhìn rõ hostname thực tế và hiểu lý do cần thận trọng. Flutter → FastAPI → phân tích cấu trúc URL, Unicode, mô hình nếu đã được huấn luyện, và nguồn tin đe doạ khi người dùng bật tra nguồn. Có adapter Google Safe Browsing và OpenPhish Community cho nghiên cứu học thuật/cá nhân. Không cần tài khoản; không đọc SMS, danh bạ hoặc clipboard trong nền; không tự mở link.
 
-**Trạng thái:** có luồng ứng dụng/API chạy thật, bộ phân tích, lịch sử tuỳ chọn, chia sẻ hệ điều hành, PostgreSQL migrations, pipeline train/evaluate, Docker Compose và CI. Chưa có model được huấn luyện trên bộ dữ liệu thật đủ timestamp; chưa xác minh Google live vì chưa cấu hình API key. Không tuyên bố đạt recall +30 điểm phần trăm hoặc FPR ≤5%. [Kết quả kiểm tra và giới hạn](docs/verification.md) ghi riêng từng phần đã xác minh.
+**Trạng thái:** có luồng ứng dụng/API chạy thật, bộ phân tích, lịch sử tuỳ chọn, chia sẻ hệ điều hành, PostgreSQL migrations, pipeline train/evaluate, Docker Compose và CI. PostgreSQL 18 local tại cổng 5432 đã được kết nối bằng tài khoản ứng dụng riêng và kiểm tra ghi/đọc/xoá. OpenPhish đã được đối chiếu bằng feed HTTPS thật. Chưa có model được huấn luyện trên bộ dữ liệu thật đủ timestamp; chưa xác minh Google live vì chưa cấu hình API key. Không tuyên bố đạt recall +30 điểm phần trăm hoặc FPR ≤5%. [Kết quả kiểm tra và giới hạn](docs/verification.md) ghi riêng từng phần đã xác minh.
 
 Đề tài: **Phát triển Lynveris: ứng dụng cảnh báo đường link lừa đảo trong tin nhắn cho gia đình dựa trên đặc trưng URL và nguồn tin đe doạ.** Tên SafeGuard trong V4 được đổi thành Lynveris theo yêu cầu hiện tại. CH1/H1 về phát hiện URL mới và CH2/H2 về khả năng nhận diện của người dùng được giữ nguyên; chưa có kết quả thực nghiệm cho hai giả thuyết. Repository chỉ triển khai sản phẩm và tài liệu kỹ thuật.
 
@@ -33,9 +33,19 @@ flutter run -d <android-device-id> --dart-define=API_BASE_URL=http://10.0.2.2:80
 
 Flutter Analyzer/Kotlin trên Windows có thể gặp lỗi đường dẫn có dấu hoặc cache giữa hai ổ đĩa. Có thể dùng thư mục checkout có đường dẫn ASCII hoặc tạo `subst` ở một ổ còn trống rồi chạy Flutter tại đường dẫn đó. Dự án đã tắt incremental Kotlin và giới hạn Gradle workers để xử lý lỗi cache khác ổ quan sát trên máy phát triển. Dùng `dart` nằm trong SDK Flutter, tránh bản Dart độc lập trên PATH.
 
-## Google Safe Browsing
+## PostgreSQL đã cài trên Windows
 
-Tạo khoá backend theo [tài liệu chính thức](https://developers.google.com/safe-browsing/v4/lookup-api), bật dịch vụ và cấu hình `LYNVERIS_GOOGLE_API_KEY` trong `.env`. Không gửi khoá vào chat, commit hoặc APK. Khởi động lại API; người dùng bật **Tra Google Safe Browsing** trong Cài đặt sau khi đọc nội dung gửi dữ liệu. API key không được yêu cầu để phân tích cấu trúc URL.
+Với database `lynveris` đã tạo trên `127.0.0.1:5432`, chạy `python scripts/configure_local_postgres.py` bằng Python của `.venv`. Cửa sổ local nhận mật khẩu quản trị bằng ô che ký tự; mật khẩu đó chỉ ở bộ nhớ. Công cụ chạy Alembic bằng kết nối quản trị, tạo một role ứng dụng riêng với CONNECT/USAGE/SELECT/INSERT/DELETE và ghi `.env` bị gitignore, giới hạn ACL cho tài khoản Windows hiện tại và SYSTEM. Không reset schema, sửa pg_hba hoặc thay mật khẩu role có sẵn. Nếu đã có `.env`, công cụ dừng để đối chiếu, không ghi đè.
+
+`python scripts/smoke_database.py` tạo mã sở hữu ngẫu nhiên, kiểm tra ghi/đọc SQL/xoá đúng bản ghi thử và xác nhận các ID có sẵn còn nguyên. Chế độ `LYNVERIS_RETENTION_CLEANUP_ENABLED=false` dành riêng cho phiên kiểm tra bảo toàn dữ liệu; khi dùng bình thường, bật lại cơ chế xoá thống kê sau 7 ngày. Không mở PostgreSQL ra Internet.
+
+## Nguồn tin đe doạ
+
+OpenPhish Community không cần khoá. Chỉ dùng cho nghiên cứu học thuật/cá nhân theo [điều khoản hiện hành](https://openphish.com/terms.html), không phân phối lại feed hoặc dùng thương mại nếu chưa có chấp thuận phù hợp. Chọn `LYNVERIS_THREAT_PROVIDER=openphish` và `LYNVERIS_OPENPHISH_ACADEMIC_USE=true` ở backend. URL người dùng được đối chiếu tại backend, không gửi đến OpenPhish. Backend chỉ tải endpoint HTTPS cố định được liên kết từ [trang feed chính thức](https://openphish.com/phishing_feeds.html); không truy cập các URL trong feed, lưu tập hash trong RAM tối đa một giờ, giới hạn 2 MiB/10.000 dòng, hai lần thử/8 giây và cooldown khi lỗi/quota. Feed Community có phạm vi hạn chế và chu kỳ công bố 12 giờ; không có trong feed không chứng minh hợp lệ. Thời điểm nhận feed không phải thời điểm URL được phát hiện hoặc gán nhãn; không dùng nó tạo timestamp lịch sử cho ML. Không đóng gói feed trong source/APK.
+
+### Google Safe Browsing
+
+Tạo khoá backend theo [tài liệu chính thức](https://developers.google.com/safe-browsing/v4/lookup-api), bật dịch vụ và cấu hình `LYNVERIS_GOOGLE_API_KEY` cùng `LYNVERIS_THREAT_PROVIDER=google` trong `.env`. Không gửi khoá vào chat, commit hoặc APK. Khởi động lại API; người dùng bật **Tra nguồn tin đe doạ** trong Cài đặt sau khi đọc nội dung gửi dữ liệu. API key không được yêu cầu để phân tích cấu trúc URL hoặc dùng OpenPhish cho nghiên cứu.
 
 Safe Browsing dùng cho mục đích phi thương mại theo [điều khoản](https://developers.google.com/safe-browsing/v4/terms). Nếu chuyển sang sản phẩm thương mại cần chọn dịch vụ có điều khoản phù hợp. Cache tuân thủ thời hạn; cảnh báo Google có attribution và URL advisory. Chưa ghi nhận trong nguồn không đồng nghĩa an toàn. Thiếu khoá, timeout, quota và lỗi đều được trả riêng, không thay bằng kết quả giả.
 

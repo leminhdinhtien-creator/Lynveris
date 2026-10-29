@@ -1,17 +1,20 @@
 # Kiểm tra sản phẩm
 
-Ngày kiểm tra: **28/10/2026, múi giờ Việt Nam**. Đây là kết quả chạy phần mềm, không phải đánh giá chất lượng nhận diện trên dữ liệu thực địa. Test có AI hỗ trợ; không nhận là test do sinh viên tự viết.
+Ngày kiểm tra: **29/10/2026, múi giờ Việt Nam**. Chạy trực tiếp trên Windows của máy phát triển, không phải cloud/WSL. Đây là kết quả chạy phần mềm, không phải đánh giá chất lượng nhận diện trên dữ liệu thực địa. Test có AI hỗ trợ; không nhận là test do sinh viên tự viết.
 
 ## Đã xác minh tại máy phát triển
 
 | Phạm vi | Kết quả thực tế |
 |---|---|
-| Backend `pytest backend/tests` | **109 passed**; có JUnit trong `.verification/backend-junit.xml` tại máy |
+| Backend `pytest backend/tests` | **114 passed**; gồm hồi quy chế độ giữ dữ liệu cũ và adapter OpenPhish |
 | Ruff check/format | Đạt với backend và scripts |
 | Flutter analyze | Không phát hiện lỗi |
-| Flutter unit/widget | **13 passed**, gồm API client, chọn dữ liệu gửi, lỗi mạng, trích URL, lưu/xoá/ẩn thông tin lịch sử, lỗi lưu thiết bị, điều hướng, hai lượt kiểm tra liên tiếp và cỡ chữ 150% trên màn hình nhỏ |
-| Android → HTTP API thật | Đạt trên Small_Phone emulator: example.org trả thiếu thông tin; URL có `google.com@evil.example` trả Cần thận trọng với hostname evil.example; kiểm tra cả hai URL gửi thật và nhập lại sau khi quay về |
-| PostgreSQL 18 native | Alembic upgrade, schema check, API readiness, insert thống kê có đồng ý và delete theo mã thiết bị đều đạt trên cluster kiểm thử riêng |
+| Flutter unit/widget | **15 passed**, gồm API client, chọn dữ liệu gửi, lỗi mạng, trích URL, lưu/xoá/ẩn thông tin lịch sử, lỗi lưu thiết bị, điều hướng, nhận Share khi đang xem kết quả/đang chờ API, hai lượt kiểm tra liên tiếp và cỡ chữ 150% trên màn hình nhỏ |
+| Android → FastAPI → PostgreSQL thật | Ca `product_flow_test.dart` đạt trên Small_Phone/emulator-5554: URL thường trả thiếu thông tin, userinfo giả hostname trả thận trọng, một URL đang có trong feed OpenPhish trả nguy cơ cao. Collector đọc đúng ba ID phản hồi Flutter từ SQL, sau đó xác nhận việc xoá qua Flutter và bảo toàn các ID có sẵn |
+| PostgreSQL 18.6 trên máy | Database `lynveris`, cổng **5432**, migration **0001_minimal_events**. Role `lynveris_app` có SELECT/INSERT/DELETE, không superuser/createdb/createrole/schema CREATE/TRUNCATE. Mật khẩu quản trị nhập tại cửa sổ local, không lưu; `.env` chứa riêng thông tin role runtime, bị gitignore và giới hạn ACL |
+| Lịch sử trên Android | Lưu thật qua SharedPreferences, tạo AppStore mới đọc lại đủ ba mục, ẩn path/query, mở lại chi tiết, xoá một mục và xoá hết dữ liệu thử đều đạt |
+| Mất kết nối và timeout trên Android | Thử cổng đóng và TCP nhận kết nối nhưng không phản hồi: UI báo chưa kiểm tra/quá thời gian chờ, không tạo kết quả và không lưu thêm thống kê |
+| Nguồn thật | OpenPhish Community: tải HTTPS thật 300 URL, đối chiếu có/không có trong feed. Không truy cập URL phishing, không dùng transport giả ở runtime. Google thiếu khoá trả `not_configured` và kết quả thiếu thông tin |
 | SQLite phát triển | Schema check không có thay đổi chưa migrate |
 | APK ứng dụng thường | Build debug thành công. Bản trong `artifacts/lynveris-debug.apk` được kiểm tra không chứa entrypoint integration test; không dùng APK test runner để bàn giao |
 | Docker Compose trên CI | Build image, chạy migrations/PostgreSQL/API bằng Compose, chờ healthy và gọi `/ready` đã đạt |
@@ -39,12 +42,13 @@ Một cảnh báo thư viện Starlette về việc tương lai chuyển test cl
 | Tên Lynveris tràn khi tăng cỡ chữ ở màn hình hẹp | Giới hạn riêng wordmark theo chiều rộng, giữ chữ nội dung lớn; hồi quy cỡ chữ 150% đạt |
 | Bộ trích URL loại dấu câu có thể mang nghĩa trong path/query | Giữ nguyên span URL; kiểm thử dấu `!`, `)` và dấu chấm cuối miền |
 | Trạng thái tải được giữ đến lúc đóng màn hình kết quả, làm ô nhập chưa nhận nội dung khi quay về nhanh trên Android | Kết thúc trạng thái tải trước khi điều hướng; hồi quy gửi hai URL liên tiếp trên emulator và kiểm tra controller/request thật đã đạt |
+| Nhận Android Share khi đang xem kết quả chỉ cập nhật ô nhập phía dưới, màn hình kết quả cũ vẫn che nội dung mới | Trở về route đầu khi nhận Share; tăng thế hệ yêu cầu để phản hồi đang chờ không đẩy kết quả cũ lên lại. Hồi quy ban đầu thất bại, sau sửa widget tests đạt |
 
 Chưa có **10 lỗi nhận diện thực địa** được quan sát và gán nhãn. Không bịa lỗi hoặc lấy lỗi cài đặt làm số đo chất lượng phát hiện. Khi có lỗi thật, thêm bằng chứng đã ẩn thông tin vào tập phát triển và giữ tập test cuối độc lập.
 
 ## Chưa xác minh hoặc còn chặn
 
-- **Google live:** cần `LYNVERIS_GOOGLE_API_KEY` hợp lệ ở backend; hiện chỉ xác minh hợp đồng adapter bằng mock và trạng thái thiếu cấu hình thật. Không có mock thay thế trong ứng dụng.
+- **Google live:** cần `LYNVERIS_GOOGLE_API_KEY` hợp lệ ở backend và chọn provider `google`; hiện chỉ xác minh hợp đồng adapter bằng mock và trạng thái thiếu cấu hình thật. Runtime hiện dùng OpenPhish Community cho nghiên cứu, không có mock thay thế trong ứng dụng. Điều khoản OpenPhish không cho tự do phân phối lại feed hoặc sử dụng thương mại.
 - **Model và H1:** cần dữ liệu hai nhãn có timestamp/bằng chứng/quyền sử dụng, đủ ba giai đoạn và snapshot blacklist đương thời. Chưa có model triển khai; chưa đo precision/recall/F1/FPR thật, URL mới, coverage nghiên cứu hoặc mức cải thiện +30 điểm phần trăm.
 - **Docker tại máy này:** không có Docker CLI/daemon; chạy container đã được xác minh trên GitHub CI thay thế. PostgreSQL native cũng đã chạy đạt riêng.
 - **Thiết bị thật:** đã kiểm tra emulator; chưa xác minh Android Share từ từng ứng dụng nguồn, share sheet/OEM, bàn phím và khả năng đọc trên điện thoại vật lý/người dùng gia đình. Không có thử nghiệm pilot hoặc chỉ số H2 trong phạm vi bàn giao.

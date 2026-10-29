@@ -37,8 +37,9 @@ def cleanup(engine):
         )
 
 
-def record_event(engine, result, token):
-    cleanup(engine)
+def record_event(engine, result, token, retention_cleanup_enabled=True):
+    if retention_cleanup_enabled:
+        cleanup(engine)
     with engine.begin() as db:
         db.execute(
             ResearchEvent.__table__.insert().values(

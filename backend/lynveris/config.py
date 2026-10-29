@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -9,3 +11,6 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:8080", "http://127.0.0.1:8080"]
     rate_limit_per_minute: int = 30
     auto_create_dev_database: bool = True
+    retention_cleanup_enabled: bool = True
+    threat_provider: Literal["google", "openphish"] = "google"
+    openphish_academic_use: bool = False

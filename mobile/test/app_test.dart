@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:lynveris/api.dart';
@@ -12,6 +14,77 @@ import 'store_test.dart' show MemoryStorage;
 import 'store_test.dart' as fixtures;
 
 void main() {
+  testWidgets('new share suppresses a stale in-flight result', (tester) async {
+    final store = AppStore(MemoryStorage());
+    await store.load();
+    store.onboardingDone = true;
+    final response = Completer<http.Response>();
+    final api = ApiClient(client: MockClient((request) => response.future));
+    await tester.pumpWidget(LynverisApp(store: store, api: api));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'https://example.org/');
+    await tester.tap(find.text('Kiểm tra đường link'));
+    await tester.pump();
+    await tester.binding.defaultBinaryMessenger.handlePlatformMessage(
+      'vn.lynveris/share',
+      const StandardMethodCodec().encodeMethodCall(
+        const MethodCall('sharedText', 'https://example.com/new'),
+      ),
+      (_) {},
+    );
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(find.byType(TextField)).enabled, isTrue);
+    response.complete(
+      http.Response.bytes(utf8.encode(jsonEncode(fixtures.result())), 200),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(ResultPage), findsNothing);
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).controller!.text,
+      'https://example.com/new',
+    );
+  });
+  testWidgets('incoming Android share reveals input above an existing result', (
+    tester,
+  ) async {
+    final store = AppStore(MemoryStorage());
+    await store.load();
+    store.onboardingDone = true;
+    var requests = 0;
+    final api = ApiClient(
+      client: MockClient((request) async {
+        requests++;
+        return http.Response.bytes(
+          utf8.encode(jsonEncode(fixtures.result())),
+          200,
+        );
+      }),
+    );
+    await tester.pumpWidget(LynverisApp(store: store, api: api));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'https://example.org/');
+    await tester.tap(find.text('Kiểm tra đường link'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ResultPage), findsOneWidget);
+    await tester.binding.defaultBinaryMessenger.handlePlatformMessage(
+      'vn.lynveris/share',
+      const StandardMethodCodec().encodeMethodCall(
+        const MethodCall('sharedText', 'Received: https://example.com/new'),
+      ),
+      (_) {},
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(ResultPage), findsNothing);
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).controller!.text,
+      'Received: https://example.com/new',
+    );
+    expect(
+      requests,
+      1,
+      reason: 'Receiving share must not automatically send a URL.',
+    );
+  });
   testWidgets('can check another URL after returning from a result', (
     tester,
   ) async {

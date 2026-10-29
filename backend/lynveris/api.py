@@ -16,6 +16,7 @@ from starlette.concurrency import run_in_threadpool
 from .config import Settings
 from .database import Base, cleanup, delete_events, engine_for, record_event
 from .model import UrlModel
+from .openphish import OpenPhishCommunity
 from .schemas import CheckRequest, CheckResult
 from .service import check_url
 from .threats import GoogleSafeBrowsing
@@ -77,14 +78,19 @@ class RequestGuard:
 def create_app(settings: Settings | None = None):
     settings = settings or Settings()
     engine = engine_for(settings.database_url)
-    source = GoogleSafeBrowsing(settings.google_api_key)
+    source = (
+        OpenPhishCommunity(settings.openphish_academic_use)
+        if settings.threat_provider == "openphish"
+        else GoogleSafeBrowsing(settings.google_api_key)
+    )
     model = UrlModel(settings.model_directory)
 
     @asynccontextmanager
     async def lifespan(app):
         if settings.database_url.startswith("sqlite") and settings.auto_create_dev_database:
             Base.metadata.create_all(engine)
-        await run_in_threadpool(cleanup, engine)
+        if settings.retention_cleanup_enabled:
+            await run_in_threadpool(cleanup, engine)
 
         async def janitor():
             while True:
@@ -94,13 +100,14 @@ def create_app(settings: Settings | None = None):
                 except SQLAlchemyError:
                     pass
 
-        task = asyncio.create_task(janitor())
+        task = asyncio.create_task(janitor()) if settings.retention_cleanup_enabled else None
         yield
-        task.cancel()
-        try:
-            await task
-        except asyncio.CancelledError:
-            pass
+        if task is not None:
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
         engine.dispose()
 
     app = FastAPI(title="Lynveris API", version="0.1.0", lifespan=lifespan)
@@ -134,7 +141,14 @@ def create_app(settings: Settings | None = None):
         return {
             "status": "ready",
             "model": "ready" if model.pipeline is not None else "unavailable",
-            "threat": "configured" if settings.google_api_key else "not_configured",
+            "threat": "configured"
+            if (
+                settings.openphish_academic_use
+                if settings.threat_provider == "openphish"
+                else bool(settings.google_api_key)
+            )
+            else "not_configured",
+            "threat_provider": settings.threat_provider,
             "redirects": "disabled",
         }
 
@@ -148,7 +162,13 @@ def create_app(settings: Settings | None = None):
             raise HTTPException(422, str(exc)) from None
         if request.research_consent:
             try:
-                await run_in_threadpool(record_event, engine, result, request.deletion_token)
+                await run_in_threadpool(
+                    record_event,
+                    engine,
+                    result,
+                    request.deletion_token,
+                    settings.retention_cleanup_enabled,
+                )
             except SQLAlchemyError:
                 result.limitations.append(
                     "Không lưu được thống kê đã đồng ý; kết quả kiểm tra vẫn hiển thị."

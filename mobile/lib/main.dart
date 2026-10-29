@@ -147,6 +147,7 @@ class _AppShellState extends State<AppShell> {
   final _input = TextEditingController();
   final _channel = const MethodChannel('vn.lynveris/share');
   bool _busy = false;
+  int _requestGeneration = 0;
   String? _error;
   AppStore get store => widget.store;
   @override
@@ -173,10 +174,16 @@ class _AppShellState extends State<AppShell> {
 
   void _receive(String text) {
     if (mounted) {
+      _requestGeneration++;
       setState(() {
+        _busy = false;
         _input.text = text.length <= 12000 ? text : text.substring(0, 12000);
         _page = 0;
         _error = null;
+      });
+      // A new Android share must reveal its input even while a result/dialog is open.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
       });
     }
   }
@@ -276,12 +283,14 @@ class _AppShellState extends State<AppShell> {
     if (selected == null || !mounted) {
       return;
     }
+    final generation = ++_requestGeneration;
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
       final result = await widget.api.check(selected, store);
+      if (!mounted || generation != _requestGeneration) return;
       try {
         await store.addResult(result);
       } catch (_) {
@@ -295,7 +304,7 @@ class _AppShellState extends State<AppShell> {
           );
         }
       }
-      if (mounted) {
+      if (mounted && generation == _requestGeneration) {
         // A completed request must release input before navigating to its result.
         setState(() => _busy = false);
         unawaited(
@@ -306,17 +315,17 @@ class _AppShellState extends State<AppShell> {
         );
       }
     } on ApiFailure catch (e) {
-      if (mounted) {
+      if (mounted && generation == _requestGeneration) {
         setState(() => _error = e.message);
       }
     } catch (_) {
-      if (mounted) {
+      if (mounted && generation == _requestGeneration) {
         setState(
           () => _error = 'Chưa hoàn tất kiểm tra. Vui lòng thử lại; hiện chưa có kết luận.',
         );
       }
     } finally {
-      if (mounted) {
+      if (mounted && generation == _requestGeneration) {
         setState(() => _busy = false);
       }
     }
@@ -1066,7 +1075,7 @@ class _ResultPageState extends State<ResultPage> {
                       title: 'Kết quả Lynveris',
                       text:
                           'Lynveris · ${archival ? 'Kết quả cũ, cần kiểm tra lại' : result['title']}\nHostname: ${url['hostname']}\nThời điểm: ${formatTime(result['checked_at'])}\nHãy xác minh qua ứng dụng chính thức. Không cung cấp mật khẩu hoặc OTP.\nKết quả có thể bỏ sót hoặc cảnh báo nhầm.'
-                          '${!archival && threat['status'] == 'detected' ? '\nAdvisory provided by Google\nhttps://developers.google.com/safe-browsing/v4/support' : ''}',
+                          '${!archival && threat['status'] == 'detected' ? '\nNguồn: ${threat['source']}\n${threat['attribution'] ?? ''}\n${threat['advisory_url'] ?? ''}' : ''}',
                     ),
                   );
                 } catch (_) {
@@ -1095,7 +1104,7 @@ class _ResultPageState extends State<ResultPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Google Safe Browsing: ${threatStatus(threat['status'])}',
+                        '${threat['source']}: ${threatStatus(threat['status'])}',
                         style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                       if (threat['checked_at'] != null)
@@ -1106,6 +1115,10 @@ class _ResultPageState extends State<ResultPage> {
                         Text(
                           'Hiệu lực đến: ${formatTime(threat['expires_at'])}',
                         ),
+                      if (threat['feed_received_at'] != null)
+                        Text(
+                          'Tải feed lúc: ${formatTime(threat['feed_received_at'])}. Đây không phải thời điểm URL được gán nhãn.',
+                        ),
                       if (threat['cached'] == true)
                         const Text(
                           'Kết quả từ cache còn hạn tại lúc kiểm tra.',
@@ -1115,12 +1128,14 @@ class _ResultPageState extends State<ResultPage> {
                         Text(threat['attribution']),
                         Link(
                           uri: Uri.parse(
-                            'https://developers.google.com/safe-browsing/v4/support',
+                            threat['source'] == 'OpenPhish Community'
+                                ? 'https://openphish.com/phishing_feeds.html'
+                                : 'https://developers.google.com/safe-browsing/v4/support',
                           ),
                           target: LinkTarget.blank,
                           builder: (context, followLink) => TextButton(
                             onPressed: followLink,
-                            child: const Text('Thông tin cảnh báo từ Google'),
+                            child: const Text('Thông tin về nguồn cảnh báo'),
                           ),
                         ),
                         Link(
@@ -1267,9 +1282,9 @@ class _SettingsPageState extends State<SettingsPage> {
         const Divider(),
         SwitchListTile.adaptive(
           contentPadding: EdgeInsets.zero,
-          title: const Text('Tra Google Safe Browsing'),
+          title: const Text('Tra nguồn tin đe doạ'),
           subtitle: const Text(
-            'Gửi URL được chọn, gồm đường dẫn và tham số, từ backend đến Google. URL có thể chứa dữ liệu riêng tư. Google vẫn có thể bỏ sót hoặc cảnh báo nhầm.',
+            'Cho phép tra nguồn đang cấu hình trên máy chủ. Với Google, URL gồm đường dẫn và tham số được gửi đến Google. Với OpenPhish, URL được đối chiếu trên backend và không gửi đến nguồn. Nguồn có thể bỏ sót hoặc cảnh báo nhầm.',
           ),
           value: store.useThreat,
           onChanged: (value) async {

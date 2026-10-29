@@ -1,4 +1,4 @@
-param([int]$Port = 8000)
+param([int]$Port = 8000, [switch]$Migrate)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $projectRoot
@@ -8,6 +8,9 @@ if (-not (Test-Path -LiteralPath $pythonExe)) {
     & $pythonExe -m pip install -r backend/requirements.lock
     & $pythonExe -m pip install --no-deps -e backend
 }
-& $pythonExe -m alembic -c backend/alembic.ini upgrade head
-if ($LASTEXITCODE -ne 0) { throw 'Database migration failed.' }
+if ($Migrate) {
+    # Use a migration account explicitly. The local runtime role cannot alter schema.
+    & $pythonExe -m alembic -c backend/alembic.ini upgrade head
+    if ($LASTEXITCODE -ne 0) { throw 'Database migration failed. Use the migration account, not the runtime role.' }
+}
 & $pythonExe -m uvicorn lynveris.api:app --host 127.0.0.1 --port $Port --no-access-log --no-proxy-headers
