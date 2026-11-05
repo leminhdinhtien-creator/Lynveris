@@ -13,6 +13,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.concurrency import run_in_threadpool
 
+from . import __version__
 from .combined_sources import CombinedSources
 from .config import Settings
 from .database import Base, cleanup, delete_events, engine_for, record_event
@@ -33,7 +34,9 @@ class RequestGuard:
         self.salt = secrets.token_bytes(32)
 
     async def __call__(self, scope, receive, send):
-        if scope["type"] != "http" or scope["path"] in {"/health", "/ready"}:
+        if scope["type"] != "http" or (
+            scope["method"] == "GET" and scope["path"] in {"/health", "/ready"}
+        ):
             return await self.app(scope, receive, send)
         body = bytearray()
         while True:
@@ -48,7 +51,7 @@ class RequestGuard:
             if not message.get("more_body", False):
                 break
         if scope["method"] != "OPTIONS":
-            client = str(scope.get("client", ("unknown",))[0])
+            client = str((scope.get("client") or ("unknown",))[0])
             key = hashlib.sha256(self.salt + client.encode()).hexdigest()
             t = time.monotonic()
             times = self.clients.setdefault(key, deque())
@@ -73,7 +76,12 @@ class RequestGuard:
                 return {"type": "http.request", "body": bytes(body), "more_body": False}
             return await receive()
 
-        await self.app(scope, replay, send)
+        async def no_store(message):
+            if message["type"] == "http.response.start":
+                message.setdefault("headers", []).append((b"cache-control", b"no-store"))
+            await send(message)
+
+        await self.app(scope, replay, no_store)
 
 
 def create_app(settings: Settings | None = None):
@@ -87,6 +95,9 @@ def create_app(settings: Settings | None = None):
         "combined": CombinedSources(google, openphish),
     }[settings.threat_provider]
     model = UrlModel(settings.model_directory)
+    is_release = settings.deployment_mode == "release"
+    if is_release and model.pipeline is None:
+        raise RuntimeError("Release model is missing or incompatible with this runtime.")
 
     @asynccontextmanager
     async def lifespan(app):
@@ -113,7 +124,15 @@ def create_app(settings: Settings | None = None):
                 pass
         engine.dispose()
 
-    app = FastAPI(title="Lynveris API", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(
+        title="Lynveris API",
+        version=__version__,
+        lifespan=lifespan,
+        docs_url=None if is_release else "/docs",
+        redoc_url=None if is_release else "/redoc",
+        openapi_url=None if is_release else "/openapi.json",
+        redirect_slashes=False,
+    )
     app.state.engine, app.state.source, app.state.model = engine, source, model
     app.add_middleware(RequestGuard, limit=settings.rate_limit_per_minute)
     app.add_middleware(
@@ -132,7 +151,7 @@ def create_app(settings: Settings | None = None):
 
     @app.get("/health")
     def health():
-        return {"status": "ok", "version": "0.1.0"}
+        return {"status": "ok", "service": "lynveris", "version": __version__}
 
     @app.get("/ready")
     def ready():
@@ -144,13 +163,7 @@ def create_app(settings: Settings | None = None):
         return {
             "status": "ready",
             "model": "ready" if model.pipeline is not None else "unavailable",
-            "threat": "configured"
-            if {
-                "google": bool(settings.google_api_key),
-                "openphish": settings.openphish_academic_use,
-                "combined": bool(settings.google_api_key) and settings.openphish_academic_use,
-            }[settings.threat_provider]
-            else "not_configured",
+            "threat": "configured" if settings.threat_configured else "not_configured",
             "threat_provider": settings.threat_provider,
             "redirects": "disabled",
         }
@@ -181,7 +194,6 @@ def create_app(settings: Settings | None = None):
     @app.delete("/v1/research")
     def erase(x_deletion_token: str = Header(min_length=32, max_length=128)):
         deleted = delete_events(engine, x_deletion_token)
-        source.clear_cache()
         return {"deleted": deleted}
 
     return app

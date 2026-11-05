@@ -7,14 +7,19 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-val releaseKeysFile = rootProject.file("key.properties")
+val releaseKeysFile = rootProject.file(
+    System.getenv("LYNVERIS_ANDROID_SIGNING_PROPERTIES") ?: "key.properties"
+)
 val releaseKeys = Properties()
-// Flutter test builds a generated listener target, so inspect its native-report define too.
-val integrationBuild = (project.findProperty("dart-defines") as? String).orEmpty()
-    .split(",").any { encoded ->
-        runCatching { String(Base64.getDecoder().decode(encoded), Charsets.UTF_8) }
-            .getOrDefault("").startsWith("INTEGRATION_TEST_SHOULD_REPORT_RESULTS_TO_NATIVE=")
+val dartDefines = (project.findProperty("dart-defines") as? String).orEmpty()
+    .split(",").mapNotNull { encoded ->
+        runCatching { String(Base64.getDecoder().decode(encoded), Charsets.UTF_8) }.getOrNull()
     }
+// Flutter test builds a generated listener target, so inspect its native-report define too.
+val integrationBuild = dartDefines.any {
+    it.startsWith("INTEGRATION_TEST_SHOULD_REPORT_RESULTS_TO_NATIVE=")
+}
+val localRelease = "LYNVERIS_LOCAL_RELEASE=true" in dartDefines
 val qaBuild = project.findProperty("lynverisQa") == "true" ||
     (project.findProperty("target") as? String)?.contains("integration_test") == true ||
     integrationBuild
@@ -33,9 +38,16 @@ android {
     }
 
     defaultConfig {
-        // Stable identifier for Lynveris Android builds.
-        applicationId = if (qaBuild) "vn.lynveris.lynveris.qa" else "vn.lynveris.lynveris"
-        manifestPlaceholders["lynverisLabel"] = if (qaBuild) "Lynveris QA" else "Lynveris"
+        applicationId = when {
+            qaBuild -> "vn.lynveris.lynveris.qa"
+            localRelease -> "vn.lynveris.lynveris.local"
+            else -> "vn.lynveris.lynveris"
+        }
+        manifestPlaceholders["lynverisLabel"] = when {
+            qaBuild -> "Lynveris QA"
+            localRelease -> "Lynveris Local"
+            else -> "Lynveris"
+        }
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -59,6 +71,10 @@ android {
         }
     }
     buildTypes {
+        configureEach {
+            manifestPlaceholders["lynverisNetworkConfig"] = if (name == "release" && !localRelease)
+                "@xml/network_security_config_https" else "@xml/network_security_config"
+        }
         release {
             signingConfig = signingConfigs.findByName("release")
         }

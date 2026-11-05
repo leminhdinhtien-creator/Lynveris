@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/link.dart';
 
 import 'api.dart';
+import 'build_config.dart';
 import 'store.dart';
 import 'url_input.dart';
 
@@ -22,10 +23,25 @@ Future<void> main() async {
   runApp(LynverisApp(store: store));
 }
 
-class LynverisApp extends StatelessWidget {
+class LynverisApp extends StatefulWidget {
   const LynverisApp({super.key, required this.store, this.api});
   final AppStore store;
   final ApiClient? api;
+
+  @override
+  State<LynverisApp> createState() => _LynverisAppState();
+}
+
+class _LynverisAppState extends State<LynverisApp> {
+  final _defaultApi = ApiClient();
+  AppStore get store => widget.store;
+
+  @override
+  void dispose() {
+    _defaultApi.close();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: store,
@@ -95,7 +111,7 @@ class LynverisApp extends StatelessWidget {
         ),
         child: child!,
       ),
-      home: AppShell(store: store, api: api ?? ApiClient()),
+      home: AppShell(store: store, api: widget.api ?? _defaultApi),
     ),
   );
 }
@@ -507,7 +523,11 @@ class _AppShellState extends State<AppShell> {
   }
 
   Widget _checkButton() => FilledButton.icon(
-    onPressed: _busy ? null : _check,
+    onPressed: _busy
+        ? null
+        : store.apiBase.isEmpty
+        ? () => setState(() => _page = 2)
+        : _check,
     icon: _busy
         ? const SizedBox(
             width: 22,
@@ -515,7 +535,13 @@ class _AppShellState extends State<AppShell> {
             child: CircularProgressIndicator(strokeWidth: 2),
           )
         : const Icon(Icons.search_rounded),
-    label: Text(_busy ? 'Đang kiểm tra đường link…' : 'Kiểm tra đường link'),
+    label: Text(
+      _busy
+          ? 'Đang kiểm tra đường link…'
+          : store.apiBase.isEmpty
+          ? 'Thiết lập kết nối'
+          : 'Kiểm tra đường link',
+    ),
   );
 
   Widget _home() => PageBody(
@@ -536,6 +562,12 @@ class _AppShellState extends State<AppShell> {
           ),
         ),
         const SizedBox(height: 16),
+        if (store.apiBase.isEmpty)
+          const InfoRow(
+            icon: Icons.cloud_off_outlined,
+            title: 'Chưa có địa chỉ máy chủ',
+            text: 'Thêm địa chỉ HTTPS của máy chủ Lynveris trong Cài đặt để bắt đầu kiểm tra.',
+          ),
         if (MediaQuery.sizeOf(context).width >= 500) ...[
           const Text(
             'Kiểm tra địa chỉ và dấu hiệu đáng ngờ trước khi bạn mở.',
@@ -1238,7 +1270,57 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   bool _deleting = false;
+  bool _connecting = false;
+  String? _connectionMessage;
   AppStore get store => widget.store;
+
+  Future<void> _verifyConnection(String address, {required bool save}) async {
+    setState(() {
+      _connecting = true;
+      _connectionMessage = null;
+    });
+    try {
+      await widget.api.verifyServer(address);
+      if (!mounted) return;
+      if (save) await store.setServer(address);
+      if (mounted) {
+        setState(() => _connectionMessage = 'Đã kết nối với máy chủ Lynveris.');
+      }
+    } on ApiFailure catch (error) {
+      if (mounted) setState(() => _connectionMessage = error.message);
+    } finally {
+      if (mounted) setState(() => _connecting = false);
+    }
+  }
+
+  Future<void> _editServer() async {
+    var address = store.apiBase;
+    final value = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Địa chỉ máy chủ'),
+        content: TextFormField(
+          initialValue: address,
+          keyboardType: TextInputType.url,
+          decoration: const InputDecoration(hintText: 'https://…'),
+          autocorrect: false,
+          onChanged: (value) => address = value,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Huỷ'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, address.trim()),
+            child: const Text('Kiểm tra và lưu'),
+          ),
+        ],
+      ),
+    );
+    if (value != null && mounted) await _verifyConnection(value, save: true);
+  }
+
   @override
   Widget build(BuildContext context) => PageBody(
     child: Column(
@@ -1367,75 +1449,53 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         const SizedBox(height: 24),
         ExpansionTile(
+          initiallyExpanded: store.apiBase.isEmpty,
           tilePadding: EdgeInsets.zero,
           title: const Text('Kết nối máy chủ'),
           subtitle: Text(
-            store.apiBase,
+            store.apiBase.isEmpty ? 'Chưa thiết lập' : store.apiBase,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
           children: [
-            const Text(
-              'Dùng HTTPS cho máy chủ thật. Android Emulator dùng http://10.0.2.2:8000; bản xem thử trên máy dùng http://127.0.0.1:8000.',
-              style: TextStyle(color: muted, height: 1.6),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton(
-              onPressed: () async {
-                final controller = TextEditingController(text: store.apiBase);
-                final value = await showDialog<String>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Địa chỉ API'),
-                    content: TextField(
-                      controller: controller,
-                      keyboardType: TextInputType.url,
-                      decoration: const InputDecoration(labelText: 'https://…'),
-                      autocorrect: false,
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Huỷ'),
-                      ),
-                      FilledButton(
-                        onPressed: () =>
-                            Navigator.pop(context, controller.text.trim()),
-                        child: const Text('Lưu'),
-                      ),
-                    ],
-                  ),
-                );
-                if (value != null) {
-                  try {
-                    widget.api.endpoint(value, '/health');
-                    store.apiBase = value;
-                    await store.persist();
-                  } on ApiFailure catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context)
-                          .showSnackBar(SnackBar(content: Text(e.message)));
-                    }
-                  }
-                }
-                Future<void>.delayed(
-                  const Duration(seconds: 1),
-                  controller.dispose,
-                );
-              },
-              child: const Text('Đổi địa chỉ API'),
-            ),
+            if (allowDevelopmentHttp)
+              const Text(
+                'Máy chủ cục bộ trên Android Emulator dùng http://10.0.2.2:8000.',
+                style: TextStyle(color: muted, height: 1.6),
+              ),
+            if (_connecting) const LinearProgressIndicator(),
+            if (_connectionMessage case final message?)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Semantics(liveRegion: true, child: Text(message)),
+              ),
+            if (store.apiBase.isNotEmpty)
+              OutlinedButton(
+                onPressed: _connecting
+                    ? null
+                    : () => _verifyConnection(store.apiBase, save: false),
+                child: const Text('Kiểm tra kết nối'),
+              ),
+            if (!fixedServer)
+              TextButton(
+                onPressed: _connecting ? null : _editServer,
+                child: Text(
+                  store.apiBase.isEmpty
+                      ? 'Thêm địa chỉ máy chủ'
+                      : 'Đổi địa chỉ máy chủ',
+                ),
+              ),
             const SizedBox(height: 16),
           ],
         ),
         const SizedBox(height: 28),
         const Text(
-          'Lynveris 0.1.0',
+          'Lynveris $appVersion',
           style: TextStyle(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 8),
         const Text(
-          'Công cụ hỗ trợ nhận diện đường link lừa đảo cho gia đình. Chưa có kết quả kiểm chứng recall và tỉ lệ báo nhầm trên dữ liệu độc lập.',
+          'Công cụ hỗ trợ nhận diện đường link lừa đảo cho gia đình. Xem nguồn, phiên bản mô hình và giới hạn trong từng kết quả kiểm tra.',
           style: TextStyle(color: muted, height: 1.6),
         ),
       ],

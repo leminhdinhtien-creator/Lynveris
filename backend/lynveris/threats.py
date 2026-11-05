@@ -11,6 +11,7 @@ from typing import Protocol
 
 import httpx
 
+from . import __version__
 from .schemas import ThreatResult
 
 
@@ -64,7 +65,7 @@ class GoogleSafeBrowsing:
                             self.ENDPOINT,
                             params={"key": self._key},
                             json={
-                                "client": {"clientId": "lynveris", "clientVersion": "0.1.0"},
+                                "client": {"clientId": "lynveris", "clientVersion": __version__},
                                 "threatInfo": {
                                     "threatTypes": [
                                         "MALWARE",

@@ -1,4 +1,6 @@
+import pytest
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 
 from lynveris.api import create_app
 from lynveris.config import Settings
@@ -19,13 +21,37 @@ def client(tmp_path, **kwargs):
 
 def test_end_to_end_and_no_fake_model(tmp_path):
     with client(tmp_path) as c:
+        assert c.get("/health").json()["service"] == "lynveris"
         r = c.post("/v1/check", json={"url": "https://аррӏе.com/login"})
         assert r.status_code == 200
+        assert r.headers["cache-control"] == "no-store"
         body = r.json()
         assert body["verdict"] == "caution" and body["model"]["status"] == "unavailable"
         assert body["threat"]["status"] == "skipped"
         assert "probability" not in body
         assert body["redirect"]["status"] == "not_requested"
+
+
+def test_release_rejects_default_database_and_hides_keys():
+    with pytest.raises(ValidationError) as caught:
+        Settings(_env_file=None, deployment_mode="release", google_api_key="secret-marker")
+    assert "requires a PostgreSQL runtime connection" in str(caught.value)
+    assert "secret-marker" not in str(caught.value)
+
+
+def test_release_rejects_incompatible_artifact(tmp_path):
+    config = Settings(
+        _env_file=None,
+        deployment_mode="release",
+        database_url="postgresql+psycopg://test@127.0.0.1/test",
+        auto_create_dev_database=False,
+        model_directory=str(tmp_path),
+        cors_origins=[],
+        threat_provider="openphish",
+        openphish_academic_use=True,
+    )
+    with pytest.raises(RuntimeError, match="model is missing or incompatible"):
+        create_app(config)
 
 
 def test_missing_evidence_never_returns_clear(tmp_path):

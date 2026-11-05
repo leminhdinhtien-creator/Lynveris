@@ -8,6 +8,8 @@
 
 [Bảng chức năng đã kiểm tra, bằng chứng local và phần còn thiếu](docs/acceptance.md) ghi nhận cả Android Share hai chiều và khởi động lại từ Share. Model và benchmark khóa được giữ nguyên trong lượt kiểm tra cuối.
 
+[Bản cài Lynveris 1.0.0](docs/release.md) có cấu hình riêng cho giả lập và máy chủ HTTPS, quy trình ký APK và hướng dẫn chạy API sau reverse proxy.
+
 ## Chạy nhanh trên Windows
 
 Cần Python 3.10–3.12, Git, Flutter 3.47.4/Dart đi kèm, Android SDK và JDK tương thích. Lệnh dưới đây chạy từ thư mục repository trong PowerShell:
@@ -91,7 +93,7 @@ flutter test integration_test/api_flow_test.dart -d <emulator-id> --dart-define=
 
 Ảnh được lưu trong `artifacts/screenshots/`. APK thường ở `mobile/build/app/outputs/flutter-apk/app-debug.apk`; bản bàn giao được sao chép sang `artifacts/lynveris-debug.apk`. Đây là APK debug để thử nghiệm, không phải bản phát hành có chữ ký sản xuất. Sau khi chạy integration test, cần build lại ứng dụng thường trước khi lấy APK bàn giao để tránh đóng gói test runner. Muốn phát hành phải cấu hình signing riêng, backend HTTPS và hoàn tất đánh giá dữ liệu.
 
-Build release được chặn khi chưa có `mobile/android/key.properties`. File riêng này cần `storeFile` (đường dẫn keystore), `storePassword`, `keyAlias`, `keyPassword`; tất cả đều bị gitignore. Không dùng debug key để giả làm bản phát hành. Không đưa keystore hoặc mật khẩu vào mã nguồn.
+Build release cần file signing riêng qua `LYNVERIS_ANDROID_SIGNING_PROPERTIES` hoặc `mobile/android/key.properties`. File có `storeFile`, `storePassword`, `keyAlias` và `keyPassword`. Xem [cách build APK local và HTTPS](docs/release.md#build-và-xác-minh-chữ-ký).
 
 Web chỉ phục vụ xem thử/kiểm tra cùng mã Flutter, không thay thế ứng dụng Android. Chạy `python -m http.server 8080 --bind 127.0.0.1 --directory mobile/build/web` từ root, mở `http://127.0.0.1:8080`. Dùng đúng origin đã khai báo CORS. Không có mock backend trong bản chạy.
 

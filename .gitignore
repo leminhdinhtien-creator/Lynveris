@@ -15,4 +15,8 @@ dist/
 **/.kotlin/
 *.log
 *.jks
+*.p12
+*.keystore
 key.properties
+.env.release
+/deploy/lynveris.env

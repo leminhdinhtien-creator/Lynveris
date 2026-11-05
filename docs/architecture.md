@@ -30,7 +30,7 @@ Lịch sử tối đa 100 mục/30 ngày; bỏ toàn bộ userinfo, path, query,
 
 Đóng góp thống kê lưu UUID sự kiện, hash mã xoá ngẫu nhiên của cài đặt, mức cảnh báo, giờ, phiên bản model, trạng thái nguồn. Không lưu URL, nội dung tin nhắn hoặc IP vào bảng nghiên cứu. Đây là dữ liệu giả danh tối thiểu, không phải vô danh tuyệt đối. Hết hạn sau 7 ngày, dọn mỗi giờ và trước insert. `DELETE /v1/research` với `X-Deletion-Token` xoá thống kê của thiết bị. Mã đủ dài để tránh đoán; endpoint không nhận owner ID tuỳ ý.
 
-Uvicorn tắt access log. Validation handler không echo đầu vào. Không ghi exception chứa URL/request key. Không bật HTTP debug logging, OpenTelemetry exporter, body capture hay proxy log query/header nhạy cảm khi triển khai. Cache provider ở RAM mất khi dừng tiến trình; thao tác xoá thống kê cũng xóa cache của tiến trình. Không lưu kết quả cá nhân trên backend.
+Uvicorn tắt access log. Validation handler không phản chiếu đầu vào. Cache tra cứu chỉ giữ mã băm và thông tin nguồn trong RAM, theo thời hạn của nguồn. Thao tác xoá thống kê chỉ xoá sự kiện nghiên cứu thuộc mã xoá của thiết bị. Kết quả kiểm tra không được lưu trên backend.
 
 ## Cơ sở dữ liệu và triển khai
 
