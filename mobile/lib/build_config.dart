@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-const appVersion = '1.0.0';
+const appVersion = '1.1.0';
 const localRelease = bool.fromEnvironment('LYNVERIS_LOCAL_RELEASE');
 const allowDevelopmentHttp = !kReleaseMode || localRelease;
 const compiledApiBase = String.fromEnvironment('API_BASE_URL');

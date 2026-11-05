@@ -9,6 +9,7 @@ import 'package:lynveris/api.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lynveris/main.dart';
 import 'package:lynveris/store.dart';
+import 'package:lynveris/visuals.dart';
 
 import 'store_test.dart' show MemoryStorage;
 import 'store_test.dart' as fixtures;
@@ -25,6 +26,8 @@ void main() {
     await tester.enterText(find.byType(TextField), 'https://example.org/');
     await tester.tap(find.text('Kiểm tra đường link'));
     await tester.pump();
+    expect(find.byType(ScanPanel), findsOneWidget);
+    expect(find.text('example.org'), findsOneWidget);
     await tester.binding.defaultBinaryMessenger.handlePlatformMessage(
       'vn.lynveris/share',
       const StandardMethodCodec().encodeMethodCall(
@@ -33,6 +36,7 @@ void main() {
       (_) {},
     );
     await tester.pumpAndSettle();
+    expect(find.byType(ScanPanel), findsNothing);
     expect(tester.widget<TextField>(find.byType(TextField)).enabled, isTrue);
     response.complete(
       http.Response.bytes(utf8.encode(jsonEncode(fixtures.result())), 200),

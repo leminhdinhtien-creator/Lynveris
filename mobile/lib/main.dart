@@ -10,11 +10,7 @@ import 'api.dart';
 import 'build_config.dart';
 import 'store.dart';
 import 'url_input.dart';
-
-const ink = Color(0xFF162D35),
-    teal = Color(0xFF126B58),
-    paper = Color(0xFFF6F8F6),
-    muted = Color(0xFF566C70);
+import 'visuals.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -51,59 +47,7 @@ class _LynverisAppState extends State<LynverisApp> {
       locale: const Locale('vi'),
       supportedLocales: const [Locale('vi')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: paper,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: teal,
-          primary: teal,
-          surface: Colors.white,
-          onSurface: ink,
-        ),
-        textTheme: ThemeData.light().textTheme.apply(
-          bodyColor: ink,
-          displayColor: ink,
-        ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: paper,
-          foregroundColor: ink,
-          elevation: 0,
-        ),
-        filledButtonTheme: FilledButtonThemeData(
-          style: FilledButton.styleFrom(
-            minimumSize: const Size(48, 56),
-            textStyle: const TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
-        ),
-        outlinedButtonTheme: OutlinedButtonThemeData(
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size(48, 52),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: const Color(0xFFF7F9F8),
-          contentPadding: const EdgeInsets.all(20),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: Color(0xFFD8E3DE)),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: Color(0xFFD8E3DE)),
-          ),
-        ),
-        dividerColor: const Color(0xFFE3EAE6),
-      ),
+      theme: lynverisTheme(),
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(
           textScaler: MediaQuery.textScalerOf(context)
@@ -126,23 +70,27 @@ class Brand extends StatelessWidget {
         width: 42,
         height: 42,
         decoration: BoxDecoration(
-          color: teal,
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF234678), night],
+          ),
+          border: Border.all(color: aqua.withValues(alpha: .35)),
           borderRadius: BorderRadius.circular(14),
         ),
-        child: const Icon(Icons.shield_outlined, color: Colors.white, size: 28),
+        child: const Icon(Icons.shield_outlined, color: aqua, size: 25),
       ),
-      const SizedBox(width: 12),
-      const Flexible(
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(
-            'Lynveris',
-            style: TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -1,
-            ),
+      const SizedBox(width: 11),
+      Flexible(
+        child: Text(
+          'Lynveris',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: ink,
+            fontSize: 24,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -.9,
           ),
         ),
       ),
@@ -163,6 +111,7 @@ class _AppShellState extends State<AppShell> {
   final _input = TextEditingController();
   final _channel = const MethodChannel('vn.lynveris/share');
   bool _busy = false;
+  String _scanHost = '';
   int _requestGeneration = 0;
   String? _error;
   AppStore get store => widget.store;
@@ -235,6 +184,7 @@ class _AppShellState extends State<AppShell> {
   }
 
   Future<void> _check() async {
+    if (_busy) return;
     FocusScope.of(context).unfocus();
     final urls = extractUrls(_input.text);
     if (urls.isEmpty) {
@@ -296,16 +246,25 @@ class _AppShellState extends State<AppShell> {
         ),
       );
     }
-    if (selected == null || !mounted) {
+    final urlToCheck = selected;
+    if (urlToCheck == null || !mounted) {
       return;
     }
     final generation = ++_requestGeneration;
+    final dwell = MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 720);
+    final elapsed = Stopwatch()..start();
     setState(() {
       _busy = true;
+      _scanHost = Uri.tryParse(urlToCheck)?.host ?? '';
       _error = null;
     });
     try {
-      final result = await widget.api.check(selected, store);
+      final result = await widget.api.check(urlToCheck, store);
+      if (!mounted || generation != _requestGeneration) return;
+      final remaining = dwell - elapsed.elapsed;
+      if (remaining > Duration.zero) await Future<void>.delayed(remaining);
       if (!mounted || generation != _requestGeneration) return;
       try {
         await store.addResult(result);
@@ -326,7 +285,7 @@ class _AppShellState extends State<AppShell> {
         unawaited(
           Navigator.push<void>(
             context,
-            MaterialPageRoute<void>(builder: (_) => ResultPage(result: result)),
+            _resultRoute(result, dwell == Duration.zero),
           ),
         );
       }
@@ -347,6 +306,11 @@ class _AppShellState extends State<AppShell> {
     }
   }
 
+  void _returnToInput() {
+    _requestGeneration++;
+    setState(() => _busy = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!store.onboardingDone) {
@@ -357,134 +321,91 @@ class _AppShellState extends State<AppShell> {
         },
       );
     }
+    if (_busy) {
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) _returnToInput();
+        },
+        child: AnnotatedRegion<SystemUiOverlayStyle>(
+          value: SystemUiOverlayStyle.light,
+          child: Scaffold(
+            backgroundColor: night,
+            body: SafeArea(
+              child: ScanPanel(host: _scanHost, onBack: _returnToInput),
+            ),
+          ),
+        ),
+      );
+    }
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= 960;
-        final content = switch (_page) {
+        final typing = MediaQuery.viewInsetsOf(context).bottom > 0;
+        final page = switch (_page) {
           1 => _history(),
           2 => SettingsPage(store: store, api: widget.api),
-          _ => _home(),
+          _ => _home(wide),
         };
         return Scaffold(
-          appBar: wide
-              ? null
-              : AppBar(
-                  title: const Brand(),
-                  toolbarHeight: 78,
-                  actions: [
-                    IconButton(
-                      tooltip: 'Cài đặt và quyền riêng tư',
-                      onPressed: () => setState(() => _page = 2),
-                      icon: const Icon(Icons.tune),
-                    ),
-                  ],
+          appBar: AppBar(
+            title: const Brand(),
+            toolbarHeight: 65,
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: IconButton(
+                  tooltip: 'Cài đặt và quyền riêng tư',
+                  onPressed: () => _selectPage(2),
+                  icon: const Icon(Icons.tune_rounded),
                 ),
+              ),
+            ],
+          ),
           body: SafeArea(
+            bottom: false,
             child: Row(
               children: [
                 if (wide)
-                  Container(
-                    width: 244,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      border: Border(
-                        right: BorderSide(color: Color(0xFFE3EAE6)),
-                      ),
-                    ),
-                    padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Brand(),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'An tâm cùng gia đình',
-                          style: TextStyle(color: muted),
+                  NavigationRail(
+                    extended: true,
+                    minExtendedWidth: 188,
+                    backgroundColor: Colors.white,
+                    selectedIndex: _page,
+                    onDestinationSelected: _selectPage,
+                    destinations: [
+                      for (final destination in _destinations)
+                        NavigationRailDestination(
+                          icon: destination.icon,
+                          label: Text(destination.label),
                         ),
-                        const SizedBox(height: 52),
-                        for (final (i, icon, label) in [
-                          (0, Icons.search_rounded, 'Kiểm tra'),
-                          (1, Icons.history_rounded, 'Lịch sử'),
-                          (2, Icons.tune_rounded, 'Cài đặt'),
-                        ])
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: ListTile(
-                              selected: _page == i,
-                              selectedTileColor: const Color(0xFFE8F3EC),
-                              selectedColor: teal,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              leading: Icon(icon),
-                              title: Text(
-                                label,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              onTap: () => setState(() => _page = i),
-                            ),
-                          ),
-                        const Spacer(),
-                        const Icon(Icons.lock_outline, color: teal),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'Bạn luôn nắm quyền',
-                          style: TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Không đọc tin nhắn.\nKhông tự mở đường link.',
-                          style: TextStyle(color: muted, height: 1.6),
-                        ),
-                        const SizedBox(height: 24),
-                        const Text(
-                          'LYNVERIS · 0.1.0',
-                          style: TextStyle(
-                            color: muted,
-                            fontSize: 11,
-                            letterSpacing: 1.6,
-                          ),
-                        ),
-                      ],
-                    ),
+                    ],
                   ),
                 Expanded(
                   child: Column(
                     children: [
-                      if (store.storageError != null)
+                      if (store.storageError case final message?)
                         Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Semantics(
-                            liveRegion: true,
-                            child: Text(
-                              store.storageError!,
-                              style: const TextStyle(color: Color(0xFF9D302D)),
-                            ),
-                          ),
+                          padding: const EdgeInsets.all(14),
+                          child: _Notice(message),
                         ),
-                      Expanded(child: content),
+                      Expanded(child: page),
                       if (!wide && _page == 0)
                         Container(
-                          color: Colors.white,
-                          padding: const EdgeInsets.fromLTRB(22, 12, 22, 8),
+                          width: double.infinity,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            border: Border(top: BorderSide(color: edge)),
+                          ),
+                          padding: const EdgeInsets.fromLTRB(18, 10, 18, 8),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              if (_error != null)
+                              if (_error case final message?)
                                 Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: Semantics(
-                                    liveRegion: true,
-                                    child: Text(
-                                      _error!,
-                                      style: const TextStyle(
-                                        color: Color(0xFF9D302D),
-                                        height: 1.4,
-                                      ),
-                                    ),
-                                  ),
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: _Notice(message),
                                 ),
                               _checkButton(),
                             ],
@@ -496,306 +417,218 @@ class _AppShellState extends State<AppShell> {
               ],
             ),
           ),
-          bottomNavigationBar: wide
+          bottomNavigationBar: wide || typing
               ? null
               : NavigationBar(
                   selectedIndex: _page,
-                  onDestinationSelected: (i) => setState(() => _page = i),
-                  backgroundColor: Colors.white,
-                  destinations: const [
-                    NavigationDestination(
-                      icon: Icon(Icons.search_rounded),
-                      label: 'Kiểm tra',
-                    ),
-                    NavigationDestination(
-                      icon: Icon(Icons.history_rounded),
-                      label: 'Lịch sử',
-                    ),
-                    NavigationDestination(
-                      icon: Icon(Icons.tune_rounded),
-                      label: 'Cài đặt',
-                    ),
-                  ],
+                  onDestinationSelected: _selectPage,
+                  destinations: _destinations,
                 ),
         );
       },
     );
   }
 
+  static const _destinations = [
+    NavigationDestination(icon: Icon(Icons.radar_rounded), label: 'Kiểm tra'),
+    NavigationDestination(icon: Icon(Icons.history_rounded), label: 'Lịch sử'),
+    NavigationDestination(icon: Icon(Icons.tune_rounded), label: 'Cài đặt'),
+  ];
+
+  void _selectPage(int index) {
+    FocusScope.of(context).unfocus();
+    setState(() => _page = index);
+  }
+
   Widget _checkButton() => FilledButton.icon(
-    onPressed: _busy
-        ? null
-        : store.apiBase.isEmpty
-        ? () => setState(() => _page = 2)
-        : _check,
-    icon: _busy
-        ? const SizedBox(
-            width: 22,
-            height: 22,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          )
-        : const Icon(Icons.search_rounded),
+    onPressed: store.apiBase.isEmpty ? () => _selectPage(2) : _check,
+    icon: const Icon(Icons.radar_rounded, color: aqua),
     label: Text(
-      _busy
-          ? 'Đang kiểm tra đường link…'
-          : store.apiBase.isEmpty
-          ? 'Thiết lập kết nối'
-          : 'Kiểm tra đường link',
+      store.apiBase.isEmpty ? 'Thiết lập kết nối' : 'Kiểm tra đường link',
     ),
   );
 
-  Widget _home() => PageBody(
+  Widget _home(bool wide) => PageBody(
     child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (MediaQuery.sizeOf(context).width >= 500) ...[
-          const Eyebrow('MỘT NHỊP DỪNG, THÊM AN TÂM'),
-          const SizedBox(height: 14),
-        ],
-        Text(
-          'Đường link này\ncó đáng tin?',
-          style: TextStyle(
-            fontSize: MediaQuery.sizeOf(context).width < 500 ? 28 : 40,
-            height: 1.15,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -1.4,
-          ),
+        const MissionHeader(
+          label: 'TRẠM KIỂM TRA ĐƯỜNG LINK',
+          title: 'Đường link này\ncó đáng tin?',
+          description: 'Nhìn rõ địa chỉ trước khi mở.',
         ),
-        const SizedBox(height: 16),
         if (store.apiBase.isEmpty)
           const InfoRow(
             icon: Icons.cloud_off_outlined,
             title: 'Chưa có địa chỉ máy chủ',
             text: 'Thêm địa chỉ HTTPS của máy chủ Lynveris trong Cài đặt để bắt đầu kiểm tra.',
           ),
-        if (MediaQuery.sizeOf(context).width >= 500) ...[
-          const Text(
-            'Kiểm tra địa chỉ và dấu hiệu đáng ngờ trước khi bạn mở.',
-            style: TextStyle(fontSize: 17, height: 1.6, color: muted),
-          ),
-          const SizedBox(height: 30),
-        ],
-        Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFFDFE8E2)),
-            boxShadow: [
-              BoxShadow(
-                color: ink.withValues(alpha: .035),
-                blurRadius: 30,
-                offset: const Offset(0, 12),
-              ),
-            ],
-          ),
+        const SizedBox(height: 14),
+        SurfaceCard(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 11),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
                 children: [
+                  const Glyph(Icons.link_rounded, size: 34),
+                  const SizedBox(width: 9),
                   const Expanded(
                     child: Text(
-                      'Dán đường link hoặc tin nhắn',
+                      'Đường link hoặc tin nhắn',
                       style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
                   IconButton(
                     tooltip: 'Xoá nội dung',
-                    onPressed: _busy
-                        ? null
-                        : () {
-                            _input.clear();
-                            setState(() => _error = null);
-                          },
-                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () {
+                      _input.clear();
+                      setState(() => _error = null);
+                    },
+                    icon: const Icon(Icons.close_rounded, size: 20),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 4),
               TextField(
                 controller: _input,
                 enabled: !_busy,
-                minLines: 3,
-                maxLines: 7,
+                minLines: 2,
+                maxLines: 6,
                 maxLength: 12000,
-                style: const TextStyle(fontSize: 17, height: 1.5),
+                style: const TextStyle(fontSize: 16, height: 1.45),
                 keyboardType: TextInputType.multiline,
                 autocorrect: false,
                 enableSuggestions: false,
                 decoration: const InputDecoration(
-                  hintText:
-                      'https://…\n\nHoặc dán tin nhắn có đường link ở đây',
+                  hintText: 'https://… hoặc dán tin nhắn ở đây',
                   counterText: '',
                 ),
                 onChanged: (_) {
-                  if (_error != null) {
-                    setState(() => _error = null);
-                  }
+                  if (_error != null) setState(() => _error = null);
                 },
               ),
-              const SizedBox(height: 12),
               Align(
                 alignment: Alignment.centerLeft,
                 child: TextButton.icon(
-                  onPressed: _busy ? null : _paste,
-                  icon: const Icon(Icons.content_paste_rounded, size: 20),
+                  onPressed: _paste,
+                  style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+                  icon: const Icon(Icons.content_paste_rounded, size: 18),
                   label: const Text('Dán từ bộ nhớ tạm'),
                 ),
               ),
-              const SizedBox(height: 12),
-              if (MediaQuery.sizeOf(context).width >= 960) _checkButton(),
-              if (_busy)
-                const Padding(
-                  padding: EdgeInsets.only(top: 12),
-                  child: Text(
-                    'Đang chờ kết quả từ máy chủ. Không mở đường link.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: muted),
-                  ),
-                ),
-              if (_error != null && MediaQuery.sizeOf(context).width >= 960)
+              if (wide) _checkButton(),
+              if (wide && _error != null)
                 Padding(
-                  padding: const EdgeInsets.only(top: 16),
-                  child: Semantics(
-                    liveRegion: true,
-                    child: Text(
-                      _error!,
-                      style: const TextStyle(
-                        color: Color(0xFF9D302D),
-                        fontSize: 16,
-                        height: 1.5,
-                      ),
-                    ),
-                  ),
+                  padding: const EdgeInsets.only(top: 12),
+                  child: _Notice(_error!),
                 ),
-              const SizedBox(height: 18),
-              const Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.lock_outline_rounded, size: 18, color: muted),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Chỉ URL bạn chọn được gửi để kiểm tra. Nội dung còn lại của tin nhắn ở trên thiết bị.',
-                      style: TextStyle(color: muted, height: 1.5, fontSize: 13),
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
         ),
-        const SizedBox(height: 30),
-        Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: const Color(0xFFEAF2E7),
-            borderRadius: BorderRadius.circular(22),
-          ),
-          child: const Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        const SizedBox(height: 13),
+        const Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.lock_outline_rounded, size: 17, color: teal),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Chỉ đường link bạn chọn được gửi để kiểm tra. Phần còn lại của tin nhắn ở trên thiết bị.',
+                style: TextStyle(color: muted, height: 1.45, fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 17),
+        const SurfaceCard(
+          padding: EdgeInsets.symmetric(horizontal: 14, vertical: 3),
+          child: ExpansionTile(
+            leading: Icon(Icons.lightbulb_outline_rounded, color: teal),
+            tilePadding: EdgeInsets.zero,
+            title: Text(
+              'Ba thói quen giúp kiểm tra link',
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+            ),
             children: [
-              Icon(Icons.favorite_border_rounded, color: teal, size: 28),
-              SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Chậm một chút, chắc chắn hơn',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Tin nhắn thúc giục chuyển tiền hay cung cấp OTP? Hãy gọi lại qua số đã biết hoặc nhờ người thân kiểm tra.',
-                      style: TextStyle(color: muted, height: 1.6, fontSize: 15),
-                    ),
-                  ],
-                ),
+              InfoRow(
+                icon: Icons.language_rounded,
+                title: 'Nhìn tên miền thực tế',
+                text: 'Tên thương hiệu trong đường dẫn có thể khác tên miền nhận kết nối.',
               ),
+              InfoRow(
+                icon: Icons.https_outlined,
+                title: 'Có HTTPS vẫn cần xác minh',
+                text: 'Biểu tượng ổ khoá không xác nhận trang thuộc tổ chức bạn biết.',
+              ),
+              InfoRow(
+                icon: Icons.forum_outlined,
+                title: 'Hỏi người thân khi phân vân',
+                text: 'Nếu bị thúc giục chuyển tiền hay cung cấp OTP, hãy liên hệ qua số đã biết.',
+              ),
+              SizedBox(height: 8),
             ],
           ),
-        ),
-        const SizedBox(height: 28),
-        const Text(
-          'Một vài điều bạn nên biết',
-          style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 12),
-        const InfoRow(
-          icon: Icons.language_rounded,
-          title: 'Nhìn vào tên miền thật',
-          text:
-              'Tên thương hiệu có thể xuất hiện ở bất kỳ đâu trong đường link.',
-        ),
-        const InfoRow(
-          icon: Icons.https_outlined,
-          title: 'Có HTTPS vẫn cần kiểm tra',
-          text:
-              'Biểu tượng ổ khoá không xác nhận trang thuộc tổ chức bạn biết.',
-        ),
-        const InfoRow(
-          icon: Icons.forum_outlined,
-          title: 'Phân vân thì hỏi người thân',
-          text: 'Bạn có thể chủ động chia sẻ kết quả, không kèm nội dung tin nhắn.',
-        ),
-        const SizedBox(height: 20),
-        const Text(
-          'Lynveris có thể cảnh báo nhầm hoặc bỏ sót. Kết quả giúp bạn cân nhắc, không bảo đảm an toàn tuyệt đối.',
-          style: TextStyle(fontSize: 13, color: muted, height: 1.6),
         ),
       ],
     ),
   );
+
   Widget _history() => PageBody(
     child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Eyebrow('NHỮNG LẦN BẠN ĐÃ KIỂM TRA'),
+        MissionHeader(
+          label: 'TRÊN THIẾT BỊ NÀY',
+          title: 'Lịch sử kiểm tra',
+          description: store.saveHistory
+              ? 'Đã lưu ${store.history.length} kết quả. Tối đa 30 ngày hoặc 100 mục.'
+              : 'Bạn có thể bật lưu để xem lại những lần kiểm tra.',
+          icon: Icons.history_rounded,
+        ),
         const SizedBox(height: 14),
-        const Text(
-          'Lịch sử',
-          style: TextStyle(fontSize: 36, fontWeight: FontWeight.w800),
-        ),
-        const SizedBox(height: 12),
-        const Text(
-          'Lưu trên thiết bị tối đa 30 ngày, 100 kết quả. Không lưu đường dẫn, tham số hoặc thông tin đăng nhập.',
-          style: TextStyle(color: muted, height: 1.6),
-        ),
-        const SizedBox(height: 24),
-        if (store.history.isEmpty) ...[
-          const SizedBox(height: 36),
-          const Icon(Icons.history_toggle_off_rounded, size: 64, color: teal),
-          const SizedBox(height: 20),
-          const Text(
-            'Bạn quyết định điều gì được lưu',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            store.saveHistory
-                ? 'Chưa có kết quả nào. Lần kiểm tra tiếp theo sẽ xuất hiện ở đây.'
-                : 'Lịch sử đang tắt. Bật lưu nếu bạn muốn xem lại kết quả trên thiết bị này.',
-            style: const TextStyle(color: muted, height: 1.6),
-          ),
-          const SizedBox(height: 20),
-          if (!store.saveHistory)
-            FilledButton(
-              onPressed: () => store.setHistory(true),
-              child: const Text('Bật lưu lịch sử'),
+        if (store.history.isEmpty)
+          SurfaceCard(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                const Glyph(Icons.history_toggle_off_rounded, size: 68),
+                const SizedBox(height: 17),
+                const Text(
+                  'Bạn quyết định điều gì được lưu',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 21,
+                    height: 1.2,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  store.saveHistory
+                      ? 'Lần kiểm tra tiếp theo sẽ xuất hiện tại đây.'
+                      : 'Lịch sử đang tắt. Bản lưu chỉ giữ tên miền của đường link.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: muted, height: 1.5),
+                ),
+                if (!store.saveHistory) ...[
+                  const SizedBox(height: 17),
+                  FilledButton(
+                    onPressed: () => store.setHistory(true),
+                    child: const Text('Bật lưu lịch sử'),
+                  ),
+                ],
+              ],
             ),
-        ] else ...[
+          )
+        else ...[
           Align(
             alignment: Alignment.centerRight,
             child: TextButton.icon(
-              icon: const Icon(Icons.delete_outline),
+              icon: const Icon(Icons.delete_outline_rounded),
               label: const Text('Xoá tất cả'),
               onPressed: () async {
                 if (await confirm(
@@ -809,20 +642,22 @@ class _AppShellState extends State<AppShell> {
           ),
           for (final item in store.history)
             Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Material(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
+              padding: const EdgeInsets.only(bottom: 10),
+              child: SurfaceCard(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
                 child: ListTile(
-                  contentPadding: const EdgeInsets.all(16),
-                  leading: const Icon(Icons.history_rounded, color: muted),
+                  leading: Glyph(
+                    verdictIcon(item['verdict']),
+                    color: verdictColor(item['verdict']),
+                  ),
                   title: Text(
                     item['url']['hostname'],
                     textDirection: TextDirection.ltr,
-                    style: const TextStyle(fontWeight: FontWeight.w700),
+                    style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
                   subtitle: Text(
-                    'Kết quả đã lưu · ${formatTime(item['checked_at'])}',
+                    'Kết quả đã lưu\n${formatTime(item['checked_at'])}',
+                    style: const TextStyle(color: muted, height: 1.45),
                   ),
                   onTap: () => Navigator.push(
                     context,
@@ -832,7 +667,7 @@ class _AppShellState extends State<AppShell> {
                   ),
                   trailing: IconButton(
                     tooltip: 'Xoá kết quả',
-                    icon: const Icon(Icons.delete_outline),
+                    icon: const Icon(Icons.delete_outline_rounded),
                     onPressed: () => store.deleteItem(item['id']),
                   ),
                 ),
@@ -844,77 +679,133 @@ class _AppShellState extends State<AppShell> {
   );
 }
 
+class _Notice extends StatelessWidget {
+  const _Notice(this.message);
+  final String message;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    liveRegion: true,
+    child: DecoratedBox(
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFEEF0),
+        borderRadius: BorderRadius.circular(13),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.info_outline_rounded,
+              color: Color(0xFF9B3047),
+              size: 18,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(color: Color(0xFF86223A), height: 1.4),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
 class Onboarding extends StatelessWidget {
   const Onboarding({super.key, required this.onStart});
   final VoidCallback onStart;
+
   @override
   Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Brand(), toolbarHeight: 65),
     bottomNavigationBar: SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+        padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
         child: FilledButton.icon(
           onPressed: onStart,
-          icon: const Icon(Icons.arrow_forward_rounded),
+          icon: const Icon(Icons.arrow_forward_rounded, color: aqua),
           label: const Text('Bắt đầu kiểm tra'),
         ),
       ),
     ),
-    body: SafeArea(
-      child: PageBody(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Brand(),
-            const SizedBox(height: 52),
-            Container(
-              width: 104,
-              height: 104,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE2EFE4),
-                borderRadius: BorderRadius.circular(32),
-              ),
-              child: const Icon(Icons.shield_outlined, size: 60, color: teal),
+    body: const PageBody(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _WelcomeHero(),
+          SizedBox(height: 16),
+          SurfaceCard(
+            child: Column(
+              children: [
+                InfoRow(
+                  icon: Icons.content_paste_rounded,
+                  title: 'Dán hoặc chia sẻ vào Lynveris',
+                  text: 'Nếu có nhiều đường link, bạn chọn link cần kiểm tra.',
+                ),
+                InfoRow(
+                  icon: Icons.manage_search_rounded,
+                  title: 'Đọc lý do, biết cách xử lý',
+                  text: 'Nhìn rõ tên miền thực tế cùng nguồn và giới hạn kiểm tra.',
+                ),
+                InfoRow(
+                  icon: Icons.privacy_tip_outlined,
+                  title: 'Quyền riêng tư trong tay bạn',
+                  text: 'Lịch sử và tra nguồn bên thứ ba mặc định tắt.',
+                ),
+              ],
             ),
-            const SizedBox(height: 32),
-            const Text(
-              'Bình tĩnh trước mỗi đường link',
-              style: TextStyle(
-                fontSize: 38,
-                height: 1.2,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -1,
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Một người bạn đồng hành nhỏ, giúp cả gia đình nhận ra dấu hiệu cần thận trọng.',
-              style: TextStyle(color: muted, fontSize: 18, height: 1.6),
-            ),
-            const SizedBox(height: 32),
-            const InfoRow(
-              icon: Icons.content_paste_rounded,
-              title: 'Dán hoặc chia sẻ vào Lynveris',
-              text: 'Nếu có nhiều đường link, bạn chọn link cần kiểm tra.',
-            ),
-            const InfoRow(
-              icon: Icons.manage_search_rounded,
-              title: 'Đọc lý do, biết cách xử lý',
-              text: 'Nhìn rõ hostname thực tế cùng nguồn và giới hạn kiểm tra.',
-            ),
-            const InfoRow(
-              icon: Icons.privacy_tip_outlined,
-              title: 'Quyền riêng tư trong tay bạn',
-              text: 'Không tự đọc tin nhắn, danh bạ hay bộ nhớ tạm. Lịch sử và tra nguồn bên thứ ba mặc định tắt.',
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Kết quả có thể bỏ sót hoặc cảnh báo nhầm. Không nhập mật khẩu, OTP hoặc chuyển tiền khi chưa xác minh.',
-              style: TextStyle(color: muted, height: 1.6),
-            ),
-            const SizedBox(height: 30),
-          ],
-        ),
+          ),
+          SizedBox(height: 18),
+          Text(
+            'Kết quả có thể bỏ sót hoặc cảnh báo nhầm. Hãy xác minh trước khi nhập mật khẩu, OTP hoặc chuyển tiền.',
+            style: TextStyle(color: muted, height: 1.5),
+          ),
+        ],
       ),
+    ),
+  );
+}
+
+class _WelcomeHero extends StatelessWidget {
+  const _WelcomeHero();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: double.infinity,
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(30),
+      gradient: const RadialGradient(
+        center: Alignment(0, -.3),
+        radius: .95,
+        colors: [Color(0xFF244571), night],
+      ),
+    ),
+    padding: const EdgeInsets.fromLTRB(22, 19, 22, 24),
+    child: const Column(
+      children: [
+        SignalLabel('LYNVERIS  /  KIỂM TRA URL'),
+        RadarArt(size: 182),
+        Text(
+          'Bình tĩnh trước mỗi đường link',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 29,
+            fontWeight: FontWeight.w800,
+            height: 1.15,
+            letterSpacing: -.5,
+          ),
+        ),
+        SizedBox(height: 12),
+        Text(
+          'Xem địa chỉ thật và những dấu hiệu cần lưu ý trước khi mở.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: moon, fontSize: 15, height: 1.5),
+        ),
+      ],
     ),
   );
 }
@@ -972,45 +863,42 @@ class _ResultPageState extends State<ResultPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              padding: const EdgeInsets.all(28),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: .08),
-                borderRadius: BorderRadius.circular(26),
-                border: Border.all(color: color.withValues(alpha: .2)),
-              ),
+            MissionHeader(
+              label: archival ? 'KẾT QUẢ ĐÃ LƯU' : 'KẾT QUẢ PHÂN TÍCH',
+              title: archival
+                  ? 'Kết quả tại lần kiểm tra trước'
+                  : result['title'],
+              description: archival
+                  ? 'Kết quả được lưu từ lần trước. Dán lại URL gốc để kiểm tra hiện tại.'
+                  : result['summary'],
+              icon: verdictIcon(verdict),
+              accent: switch (verdict) {
+                'high' => const Color(0xFFFFA8B3),
+                'caution' => const Color(0xFFFFCF89),
+                'no_signs' => aqua,
+                _ => const Color(0xFFC2CAFF),
+              },
+            ),
+            const SizedBox(height: 12),
+            SurfaceCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(verdictIcon(verdict), size: 44, color: color),
-                  const SizedBox(height: 20),
-                  Text(
-                    archival
-                        ? 'Kết quả tại lần kiểm tra trước'
-                        : result['title'],
-                    style: TextStyle(
-                      fontSize: 30,
-                      height: 1.25,
-                      fontWeight: FontWeight.w800,
-                      color: color,
-                    ),
+                  Row(
+                    children: [
+                      Glyph(Icons.language_rounded, color: color, size: 35),
+                      const SizedBox(width: 10),
+                      const Expanded(child: Eyebrow('TÊN MIỀN THỰC TẾ')),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    archival
-                        ? 'Đây là bản lưu, không phản ánh trạng thái hiện tại. Hãy dán lại URL gốc để kiểm tra mới.'
-                        : result['summary'],
-                    style: const TextStyle(fontSize: 17, height: 1.6),
-                  ),
-                  const SizedBox(height: 20),
-                  const Eyebrow('TÊN MIỀN THỰC TẾ'),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   SelectableText(
                     url['hostname'],
                     textDirection: TextDirection.ltr,
                     style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 23,
+                      fontWeight: FontWeight.w800,
+                      height: 1.2,
                     ),
                   ),
                   if (url['unicode_hostname'] != url['hostname'])
@@ -1021,18 +909,22 @@ class _ResultPageState extends State<ResultPage> {
                         textDirection: TextDirection.ltr,
                       ),
                     ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   Text(
                     'Miền đăng ký: ${url['registered_domain'] ?? 'Địa chỉ IP'}',
-                    style: const TextStyle(color: muted),
+                    style: const TextStyle(color: muted, height: 1.4),
+                  ),
+                  const SizedBox(height: 9),
+                  Text(
+                    'Kiểm tra lúc ${formatTime(result['checked_at'])}',
+                    style: const TextStyle(
+                      color: muted,
+                      fontSize: 12,
+                      height: 1.4,
+                    ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Kiểm tra lúc ${formatTime(result['checked_at'])}',
-              style: const TextStyle(color: muted, fontSize: 13),
             ),
             if (historical)
               const Padding(
@@ -1042,10 +934,10 @@ class _ResultPageState extends State<ResultPage> {
                   style: TextStyle(color: muted),
                 ),
               ),
-            const SizedBox(height: 30),
-            const Text(
+            const SizedBox(height: 18),
+            const _SectionTitle(
+              Icons.analytics_outlined,
               'Vì sao có kết quả này?',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 12),
             if (signals.isEmpty)
@@ -1069,12 +961,10 @@ class _ResultPageState extends State<ResultPage> {
                 'Chỉ có thông tin mô tả URL; chưa có bằng chứng đủ để kết luận.',
                 style: TextStyle(color: muted, height: 1.6),
               ),
-            const SizedBox(height: 20),
-            const Divider(),
-            const SizedBox(height: 16),
-            const Text(
+            const SizedBox(height: 18),
+            const _SectionTitle(
+              Icons.tips_and_updates_outlined,
               'Bạn nên làm gì?',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 12),
             for (final action in result['actions'] as List)
@@ -1126,128 +1016,136 @@ class _ResultPageState extends State<ResultPage> {
               label: const Text('Nhờ người thân xem giúp'),
             ),
             const SizedBox(height: 24),
-            ExpansionTile(
-              tilePadding: EdgeInsets.zero,
-              title: const Text('Nguồn và giới hạn kiểm tra'),
-              children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${threat['source']}: ${threatStatus(threat['status'])}',
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      if (threat['partial'] == true)
-                        const Text('Tra cứu chưa đầy đủ ở một phần nguồn.'),
-                      for (final check in (threat['checks'] as List? ?? []))
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8, bottom: 8),
-                          child: Text(
-                            '${check['source']}: ${threatStatus(check['status'])}'
-                            '${check['checked_at'] != null ? '\nTra lúc: ${formatTime(check['checked_at'])}' : ''}'
-                            '${check['cached'] == true ? '\nCache còn hạn tại lúc kiểm tra.' : ''}',
-                          ),
-                        ),
-                      if (threat['checked_at'] != null)
+            SurfaceCard(
+              padding: const EdgeInsets.symmetric(horizontal: 15),
+              child: ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                title: const Text('Nguồn và giới hạn kiểm tra'),
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          'Thời điểm tra: ${formatTime(threat['checked_at'])}',
+                          '${threat['source']}: ${threatStatus(threat['status'])}',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
-                      if (threat['expires_at'] != null)
+                        if (threat['partial'] == true)
+                          const Text('Tra cứu chưa đầy đủ ở một phần nguồn.'),
+                        for (final check in (threat['checks'] as List? ?? []))
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8, bottom: 8),
+                            child: Text(
+                              '${check['source']}: ${threatStatus(check['status'])}'
+                              '${check['checked_at'] != null ? '\nTra lúc: ${formatTime(check['checked_at'])}' : ''}'
+                              '${check['cached'] == true ? '\nCache còn hạn tại lúc kiểm tra.' : ''}',
+                            ),
+                          ),
+                        if (threat['checked_at'] != null)
+                          Text(
+                            'Thời điểm tra: ${formatTime(threat['checked_at'])}',
+                          ),
+                        if (threat['expires_at'] != null)
+                          Text(
+                            'Hiệu lực đến: ${formatTime(threat['expires_at'])}',
+                          ),
+                        if (threat['feed_received_at'] != null)
+                          Text(
+                            'Tải feed lúc: ${formatTime(threat['feed_received_at'])}. Đây không phải thời điểm URL được gán nhãn.',
+                          ),
+                        if (threat['cached'] == true)
+                          const Text(
+                            'Kết quả từ cache còn hạn tại lúc kiểm tra.',
+                          ),
+                        if (threat['attribution'] != null) ...[
+                          const SizedBox(height: 8),
+                          Text(threat['attribution']),
+                          Link(
+                            uri: Uri.parse(
+                              threat['source'] == 'OpenPhish Community'
+                                  ? 'https://openphish.com/phishing_feeds.html'
+                                  : 'https://developers.google.com/safe-browsing/v4/support',
+                            ),
+                            target: LinkTarget.blank,
+                            builder: (context, followLink) => TextButton(
+                              onPressed: followLink,
+                              child: const Text('Thông tin về nguồn cảnh báo'),
+                            ),
+                          ),
+                          Link(
+                            uri: Uri.parse('https://www.antiphishing.org/'),
+                            target: LinkTarget.blank,
+                            builder: (context, followLink) => TextButton(
+                              onPressed: followLink,
+                              child: const Text('Tìm hiểu về lừa đảo phishing'),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 16),
                         Text(
-                          'Hiệu lực đến: ${formatTime(threat['expires_at'])}',
+                          'Mô hình: ${model['status'] == 'ready' ? model['version'] : 'Chưa sẵn sàng'}',
                         ),
-                      if (threat['feed_received_at'] != null)
-                        Text(
-                          'Tải feed lúc: ${formatTime(threat['feed_received_at'])}. Đây không phải thời điểm URL được gán nhãn.',
-                        ),
-                      if (threat['cached'] == true)
-                        const Text(
-                          'Kết quả từ cache còn hạn tại lúc kiểm tra.',
-                        ),
-                      if (threat['attribution'] != null) ...[
-                        const SizedBox(height: 8),
-                        Text(threat['attribution']),
-                        Link(
-                          uri: Uri.parse(
-                            threat['source'] == 'OpenPhish Community'
-                                ? 'https://openphish.com/phishing_feeds.html'
-                                : 'https://developers.google.com/safe-browsing/v4/support',
+                        if (model['release_stage'] == 'research')
+                          const Text(
+                            'Mô hình thử nghiệm · vẫn có thể bỏ sót hoặc cảnh báo nhầm.',
                           ),
-                          target: LinkTarget.blank,
-                          builder: (context, followLink) => TextButton(
-                            onPressed: followLink,
-                            child: const Text('Thông tin về nguồn cảnh báo'),
+                        if (model['score'] != null)
+                          Text(
+                            'Điểm phân loại: ${model['score'].toStringAsFixed(3)} · ngưỡng ${model['threshold']}\nKhông phải xác suất lừa đảo.',
                           ),
-                        ),
-                        Link(
-                          uri: Uri.parse('https://www.antiphishing.org/'),
-                          target: LinkTarget.blank,
-                          builder: (context, followLink) => TextButton(
-                            onPressed: followLink,
-                            child: const Text('Tìm hiểu về lừa đảo phishing'),
+                        const SizedBox(height: 12),
+                        for (final limitation in result['limitations'] as List)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Text(
+                              '• $limitation',
+                              style: const TextStyle(color: muted, height: 1.6),
+                            ),
                           ),
-                        ),
+                        for (final s in signals.where(
+                          (s) => s['severity'] == 'info',
+                        ))
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Text(
+                              '${s['title']}: ${s['detail']}',
+                              style: const TextStyle(color: muted, height: 1.6),
+                            ),
+                          ),
+                        if (result['versions'] is Map)
+                          Text(
+                            'Đặc trưng: ${result['versions']['features']} · thương hiệu ${result['versions']['brands']}',
+                            style: const TextStyle(fontSize: 12, color: muted),
+                          ),
+                        const SizedBox(height: 16),
                       ],
-                      const SizedBox(height: 16),
-                      Text(
-                        'Mô hình: ${model['status'] == 'ready' ? model['version'] : 'Chưa sẵn sàng'}',
-                      ),
-                      if (model['release_stage'] == 'research')
-                        const Text(
-                          'Mô hình thử nghiệm · vẫn có thể bỏ sót hoặc cảnh báo nhầm.',
-                        ),
-                      if (model['score'] != null)
-                        Text(
-                          'Điểm phân loại: ${model['score'].toStringAsFixed(3)} · ngưỡng ${model['threshold']}\nKhông phải xác suất lừa đảo.',
-                        ),
-                      const SizedBox(height: 12),
-                      for (final limitation in result['limitations'] as List)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: Text(
-                            '• $limitation',
-                            style: const TextStyle(color: muted, height: 1.6),
-                          ),
-                        ),
-                      for (final s in signals.where(
-                        (s) => s['severity'] == 'info',
-                      ))
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Text(
-                            '${s['title']}: ${s['detail']}',
-                            style: const TextStyle(color: muted, height: 1.6),
-                          ),
-                        ),
-                      if (result['versions'] is Map)
-                        Text(
-                          'Đặc trưng: ${result['versions']['features']} · thương hiệu ${result['versions']['brands']}',
-                          style: const TextStyle(fontSize: 12, color: muted),
-                        ),
-                      const SizedBox(height: 16),
-                    ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-            ExpansionTile(
-              tilePadding: EdgeInsets.zero,
-              title: Text(
-                historical ? 'Địa chỉ đã lược thông tin' : 'URL bạn đã gửi',
+                ],
               ),
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: SelectableText(
-                    url['original'],
-                    textDirection: TextDirection.ltr,
-                    style: const TextStyle(height: 1.5),
-                  ),
-                ),
-              ],
             ),
+            const SizedBox(height: 10),
+            SurfaceCard(
+              padding: const EdgeInsets.symmetric(horizontal: 15),
+              child: ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                title: Text(
+                  historical ? 'Địa chỉ đã lược thông tin' : 'URL bạn đã gửi',
+                ),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: SelectableText(
+                      url['original'],
+                      textDirection: TextDirection.ltr,
+                      style: const TextStyle(height: 1.5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
             const SizedBox(height: 24),
             FilledButton(
               onPressed: () => Navigator.pop(context),
@@ -1326,169 +1224,188 @@ class _SettingsPageState extends State<SettingsPage> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Eyebrow('THEO CÁCH CỦA BẠN'),
+        const MissionHeader(
+          label: 'THEO CÁCH CỦA BẠN',
+          title: 'Cài đặt',
+          description: 'Chỉnh cách hiển thị và dữ liệu bạn muốn chia sẻ.',
+          icon: Icons.tune_rounded,
+        ),
         const SizedBox(height: 14),
-        const Text(
-          'Cài đặt',
-          style: TextStyle(fontSize: 36, fontWeight: FontWeight.w800),
-        ),
-        const SizedBox(height: 32),
-        const Text(
-          'Dễ đọc, dễ sử dụng',
-          style: TextStyle(fontSize: 21, fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 18),
-        Text('Cỡ chữ trong ứng dụng · ${(store.textScale * 100).round()}%'),
-        Slider(
-          value: store.textScale,
-          min: 1,
-          max: 1.5,
-          divisions: 5,
-          label: '${(store.textScale * 100).round()}%',
-          onChanged: (value) {
-            store.textScale = value;
-            store.persist();
-          },
-        ),
-        const Text(
-          'Ứng dụng cũng tôn trọng cỡ chữ bạn đã chọn trong hệ điều hành.',
-          style: TextStyle(color: muted, height: 1.6),
-        ),
-        const SizedBox(height: 28),
-        const Divider(),
-        const SizedBox(height: 20),
-        const Text(
-          'Quyền riêng tư',
-          style: TextStyle(fontSize: 21, fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 12),
-        SwitchListTile.adaptive(
-          contentPadding: EdgeInsets.zero,
-          title: const Text('Lưu lịch sử trên thiết bị'),
-          subtitle: const Text(
-            'Tối đa 30 ngày, 100 mục. Tắt lựa chọn này sẽ xoá bản lưu hiện có.',
-          ),
-          value: store.saveHistory,
-          onChanged: (value) async {
-            if (value ||
-                await confirm(context, 'Tắt lưu và xoá lịch sử hiện có?')) {
-              await store.setHistory(value);
-            }
-          },
-        ),
-        const Divider(),
-        SwitchListTile.adaptive(
-          contentPadding: EdgeInsets.zero,
-          title: const Text('Tra nguồn tin đe doạ'),
-          subtitle: const Text(
-            'Cho phép tra nguồn đang cấu hình trên máy chủ. Với Google, URL gồm đường dẫn và tham số được gửi đến Google. Với OpenPhish, URL được đối chiếu trên backend và không gửi đến nguồn. Nguồn có thể bỏ sót hoặc cảnh báo nhầm.',
-          ),
-          value: store.useThreat,
-          onChanged: (value) async {
-            store.useThreat = value;
-            await store.persist();
-          },
-        ),
-        const Divider(),
-        SwitchListTile.adaptive(
-          contentPadding: EdgeInsets.zero,
-          title: const Text('Đóng góp thống kê tối thiểu'),
-          subtitle: const Text(
-            'Tự nguyện. Chỉ lưu mức cảnh báo, trạng thái nguồn, phiên bản mô hình và giờ kiểm tra trong 7 ngày. Không lưu URL, tin nhắn hay IP trong dữ liệu nghiên cứu.',
-          ),
-          value: store.researchConsent,
-          onChanged: (value) async {
-            store.researchConsent = value;
-            await store.persist();
-          },
-        ),
-        const SizedBox(height: 16),
-        OutlinedButton.icon(
-          onPressed: _deleting
-              ? null
-              : () async {
-                  setState(() => _deleting = true);
-                  try {
-                    await widget.api.deleteResearch(store);
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Đã xoá thống kê gắn với thiết bị này trên máy chủ.',
-                          ),
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            e is ApiFailure
-                                ? e.message
-                                : 'Chưa xoá được thống kê. Hãy thử lại.',
-                          ),
-                        ),
-                      );
-                    }
-                  } finally {
-                    if (mounted) {
-                      setState(() => _deleting = false);
-                    }
-                  }
+        SurfaceCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const _SectionTitle(
+                Icons.text_fields_rounded,
+                'Dễ đọc, dễ sử dụng',
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'Cỡ chữ trong ứng dụng · ${(store.textScale * 100).round()}%',
+              ),
+              Slider(
+                value: store.textScale,
+                min: 1,
+                max: 1.5,
+                divisions: 5,
+                label: '${(store.textScale * 100).round()}%',
+                onChanged: (value) {
+                  store.textScale = value;
+                  store.persist();
                 },
-          icon: const Icon(Icons.delete_outline),
-          label: Text(_deleting ? 'Đang xoá…' : 'Xoá thống kê trên máy chủ'),
-        ),
-        const SizedBox(height: 28),
-        const Divider(),
-        const InfoRow(
-          icon: Icons.lock_outline,
-          title: 'Chỉ kiểm tra khi bạn yêu cầu',
-          text: 'Không tự đọc tin nhắn, danh bạ hoặc clipboard. Không tự truy cập URL. Không gửi thông báo hay kết quả cho người thân khi chưa có thao tác chia sẻ của bạn.',
-        ),
-        const SizedBox(height: 24),
-        ExpansionTile(
-          initiallyExpanded: store.apiBase.isEmpty,
-          tilePadding: EdgeInsets.zero,
-          title: const Text('Kết nối máy chủ'),
-          subtitle: Text(
-            store.apiBase.isEmpty ? 'Chưa thiết lập' : store.apiBase,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          children: [
-            if (allowDevelopmentHttp)
+              ),
               const Text(
-                'Máy chủ cục bộ trên Android Emulator dùng http://10.0.2.2:8000.',
+                'Ứng dụng cũng tôn trọng cỡ chữ bạn đã chọn trong hệ điều hành.',
                 style: TextStyle(color: muted, height: 1.6),
               ),
-            if (_connecting) const LinearProgressIndicator(),
-            if (_connectionMessage case final message?)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Semantics(liveRegion: true, child: Text(message)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        SurfaceCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const _SectionTitle(Icons.privacy_tip_outlined, 'Quyền riêng tư'),
+              const SizedBox(height: 12),
+              SwitchListTile.adaptive(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Lưu lịch sử trên thiết bị'),
+                subtitle: const Text(
+                  'Tối đa 30 ngày, 100 mục. Tắt lựa chọn này sẽ xoá bản lưu hiện có.',
+                ),
+                value: store.saveHistory,
+                onChanged: (value) async {
+                  if (value ||
+                      await confirm(
+                        context,
+                        'Tắt lưu và xoá lịch sử hiện có?',
+                      )) {
+                    await store.setHistory(value);
+                  }
+                },
               ),
-            if (store.apiBase.isNotEmpty)
-              OutlinedButton(
-                onPressed: _connecting
+              const Divider(),
+              SwitchListTile.adaptive(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Tra nguồn tin đe doạ'),
+                subtitle: const Text(
+                  'Cho phép tra nguồn đang cấu hình trên máy chủ. Với Google, URL gồm đường dẫn và tham số được gửi đến Google. Với OpenPhish, URL được đối chiếu trên backend và không gửi đến nguồn. Nguồn có thể bỏ sót hoặc cảnh báo nhầm.',
+                ),
+                value: store.useThreat,
+                onChanged: (value) async {
+                  store.useThreat = value;
+                  await store.persist();
+                },
+              ),
+              const Divider(),
+              SwitchListTile.adaptive(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Đóng góp thống kê tối thiểu'),
+                subtitle: const Text(
+                  'Tự nguyện. Chỉ lưu mức cảnh báo, trạng thái nguồn, phiên bản mô hình và giờ kiểm tra trong 7 ngày. Không lưu URL, tin nhắn hay IP trong dữ liệu nghiên cứu.',
+                ),
+                value: store.researchConsent,
+                onChanged: (value) async {
+                  store.researchConsent = value;
+                  await store.persist();
+                },
+              ),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: _deleting
                     ? null
-                    : () => _verifyConnection(store.apiBase, save: false),
-                child: const Text('Kiểm tra kết nối'),
-              ),
-            if (!fixedServer)
-              TextButton(
-                onPressed: _connecting ? null : _editServer,
-                child: Text(
-                  store.apiBase.isEmpty
-                      ? 'Thêm địa chỉ máy chủ'
-                      : 'Đổi địa chỉ máy chủ',
+                    : () async {
+                        setState(() => _deleting = true);
+                        try {
+                          await widget.api.deleteResearch(store);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Đã xoá thống kê gắn với thiết bị này trên máy chủ.',
+                                ),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  e is ApiFailure
+                                      ? e.message
+                                      : 'Chưa xoá được thống kê. Hãy thử lại.',
+                                ),
+                              ),
+                            );
+                          }
+                        } finally {
+                          if (mounted) {
+                            setState(() => _deleting = false);
+                          }
+                        }
+                      },
+                icon: const Icon(Icons.delete_outline),
+                label: Text(
+                  _deleting ? 'Đang xoá…' : 'Xoá thống kê trên máy chủ',
                 ),
               ),
-            const SizedBox(height: 16),
-          ],
+              const SizedBox(height: 8),
+              const InfoRow(
+                icon: Icons.lock_outline,
+                title: 'Chỉ kiểm tra khi bạn yêu cầu',
+                text: 'Không tự đọc tin nhắn, danh bạ hoặc clipboard. Lynveris chỉ chia sẻ khi bạn chủ động thao tác.',
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 14),
+        SurfaceCard(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: ExpansionTile(
+            initiallyExpanded: store.apiBase.isEmpty,
+            tilePadding: EdgeInsets.zero,
+            title: const Text('Kết nối máy chủ'),
+            leading: const Glyph(Icons.cloud_outlined),
+            subtitle: Text(
+              store.apiBase.isEmpty ? 'Chưa thiết lập' : store.apiBase,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            children: [
+              if (allowDevelopmentHttp)
+                const Text(
+                  'Máy chủ cục bộ trên Android Emulator dùng http://10.0.2.2:8000.',
+                  style: TextStyle(color: muted, height: 1.6),
+                ),
+              if (_connecting) const LinearProgressIndicator(),
+              if (_connectionMessage case final message?)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Semantics(liveRegion: true, child: Text(message)),
+                ),
+              if (store.apiBase.isNotEmpty)
+                OutlinedButton(
+                  onPressed: _connecting
+                      ? null
+                      : () => _verifyConnection(store.apiBase, save: false),
+                  child: const Text('Kiểm tra kết nối'),
+                ),
+              if (!fixedServer)
+                TextButton(
+                  onPressed: _connecting ? null : _editServer,
+                  child: Text(
+                    store.apiBase.isEmpty
+                        ? 'Thêm địa chỉ máy chủ'
+                        : 'Đổi địa chỉ máy chủ',
+                  ),
+                ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
         const Text(
           'Lynveris $appVersion',
           style: TextStyle(fontWeight: FontWeight.w700),
@@ -1509,8 +1426,8 @@ class PageBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
     padding: EdgeInsets.symmetric(
-      horizontal: MediaQuery.sizeOf(context).width < 500 ? 22 : 48,
-      vertical: MediaQuery.sizeOf(context).width < 500 ? 24 : 32,
+      horizontal: MediaQuery.sizeOf(context).width < 500 ? 18 : 42,
+      vertical: MediaQuery.sizeOf(context).width < 500 ? 14 : 28,
     ),
     child: Center(
       child: ConstrainedBox(
@@ -1518,6 +1435,52 @@ class PageBody extends StatelessWidget {
         child: child,
       ),
     ),
+  );
+}
+
+Route<void> _resultRoute(Map<String, dynamic> result, bool reduceMotion) =>
+    PageRouteBuilder<void>(
+      transitionDuration: reduceMotion
+          ? Duration.zero
+          : const Duration(milliseconds: 300),
+      reverseTransitionDuration: reduceMotion
+          ? Duration.zero
+          : const Duration(milliseconds: 220),
+      pageBuilder: (context, animation, secondaryAnimation) =>
+          ResultPage(result: result),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+          FadeTransition(
+            opacity: animation.drive(CurveTween(curve: Curves.easeOutCubic)),
+            child: SlideTransition(
+              position: animation.drive(
+                Tween(begin: const Offset(0, .025), end: Offset.zero),
+              ),
+              child: child,
+            ),
+          ),
+    );
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle(this.icon, this.title);
+  final IconData icon;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Glyph(icon, size: 36),
+      const SizedBox(width: 10),
+      Expanded(
+        child: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            height: 1.25,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+    ],
   );
 }
 
@@ -1551,14 +1514,7 @@ class InfoRow extends StatelessWidget {
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: const Color(0xFFE9F0EC),
-            borderRadius: BorderRadius.circular(13),
-          ),
-          child: Icon(icon, color: teal, size: 23),
-        ),
+        Glyph(icon),
         const SizedBox(width: 16),
         Expanded(
           child: Column(
