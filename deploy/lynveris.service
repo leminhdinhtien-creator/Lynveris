@@ -1,0 +1,23 @@
+[Unit]
+Description=Lynveris URL inspection API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=lynveris
+Group=lynveris
+WorkingDirectory=/opt/lynveris
+EnvironmentFile=/etc/lynveris/lynveris.env
+Environment=PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2
+ExecStart=/opt/lynveris/.venv/bin/uvicorn lynveris.api:app --host 127.0.0.1 --port 8000 --no-access-log --proxy-headers --forwarded-allow-ips=127.0.0.1 --limit-concurrency 64 --timeout-keep-alive 5
+Restart=on-failure
+RestartSec=5s
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

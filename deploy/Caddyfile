@@ -1,0 +1,36 @@
+{
+	admin off
+	servers {
+		timeouts {
+			read_header 5s
+			read_body 10s
+			write 25s
+			idle 60s
+		}
+		max_header_size 16KiB
+	}
+}
+
+{$LYNVERIS_PUBLIC_HOST} {
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		Cache-Control no-store
+		-Server
+	}
+	@api path /health /v1/check /v1/research
+	handle @api {
+		request_body {
+			max_size 16KiB
+		}
+		reverse_proxy 127.0.0.1:8000 {
+			transport http {
+				dial_timeout 3s
+				response_header_timeout 20s
+			}
+		}
+	}
+	handle {
+		respond 404
+	}
+}
