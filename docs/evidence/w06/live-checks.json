@@ -1,0 +1,484 @@
+{
+  "checked_at": "2026-11-19T05:25:26.224298+00:00",
+  "database": "PostgreSQL",
+  "total": 9,
+  "passed": 9,
+  "checks": [
+    {
+      "id": "LIVE01",
+      "expected": "ready, PostgreSQL and model available",
+      "passed": true,
+      "actual": {
+        "status": "ready",
+        "model": "ready",
+        "threat": "configured",
+        "threat_provider": "combined",
+        "redirects": "disabled"
+      }
+    },
+    {
+      "id": "LIVE02",
+      "expected": "no_signs, both real sources not_found",
+      "passed": true,
+      "actual": {
+        "id": "f7fff47a-cdfb-445e-a46c-91f57651d7cf",
+        "checked_at": "2026-11-19T05:25:24.094694Z",
+        "verdict": "no_signs",
+        "title": "Chưa phát hiện dấu hiệu đáng ngờ",
+        "summary": "Chưa phát hiện dấu hiệu đáng ngờ trong phạm vi kiểm tra; vẫn cần xác minh người gửi.",
+        "url": {
+          "original": "https://www.iana.org/help/example-domains",
+          "hostname": "www.iana.org",
+          "unicode_hostname": "www.iana.org",
+          "registered_domain": "iana.org",
+          "suffix": "org",
+          "scheme": "https",
+          "port": null,
+          "has_userinfo": false
+        },
+        "signals": [],
+        "model": {
+          "status": "ready",
+          "version": "20261029T135127Z",
+          "feature_version": "url-v1",
+          "policy_version": "model-ti-rules-v1",
+          "score": 0.011327369134832786,
+          "threshold": 0.7446086243613848,
+          "alert": false,
+          "release_stage": "research"
+        },
+        "threat": {
+          "source": "Google Safe Browsing + OpenPhish Community",
+          "status": "not_found",
+          "checked_at": "2026-11-19T05:25:24.094694Z",
+          "feed_received_at": null,
+          "expires_at": "2026-11-19T05:26:24.092694Z",
+          "cached": false,
+          "categories": [],
+          "attribution": null,
+          "advisory_url": null,
+          "partial": false,
+          "checks": [
+            {
+              "source": "Google Safe Browsing",
+              "status": "not_found",
+              "checked_at": "2026-11-19T05:25:24.092694Z",
+              "feed_received_at": null,
+              "expires_at": "2026-11-19T05:26:24.092694Z",
+              "cached": false,
+              "categories": [],
+              "attribution": null,
+              "advisory_url": null,
+              "partial": false,
+              "checks": []
+            },
+            {
+              "source": "OpenPhish Community",
+              "status": "not_found",
+              "checked_at": "2026-11-19T05:25:24.090183Z",
+              "feed_received_at": "2026-11-19T05:25:24.016831Z",
+              "expires_at": "2026-11-19T06:25:24.016831Z",
+              "cached": false,
+              "categories": [],
+              "attribution": null,
+              "advisory_url": null,
+              "partial": false,
+              "checks": []
+            }
+          ]
+        },
+        "redirect": {
+          "status": "not_requested",
+          "detail": "Không truy cập URL gốc hoặc URL đích. Chưa xác minh chuyển hướng."
+        },
+        "limitations": [
+          "Chỉ phân tích địa chỉ URL; không xem nội dung trang, tuổi miền, DNS hay chứng chỉ.",
+          "Có thể bỏ sót đường link lừa đảo hoặc cảnh báo nhầm. Không có kết quả an toàn tuyệt đối.",
+          "Đây là mô hình thử nghiệm, được đánh giá hồi cứu theo ngày thu dữ liệu; chưa kiểm chứng khả năng phát hiện đường link mới chưa có trong nguồn tin đe doạ.",
+          "Mô hình chưa đạt mục tiêu cảnh báo nhầm tối đa 5% trên tập kiểm thử độc lập. Hãy xác minh thêm qua nguồn chính thức.",
+          "Nguồn tin đe doạ chưa ghi nhận URL; điều đó không chứng minh URL hợp lệ."
+        ],
+        "actions": [
+          "Mở ứng dụng chính thức hoặc tự nhập địa chỉ đã biết để kiểm tra.",
+          "Không nhập mật khẩu, mã OTP hoặc chuyển tiền khi chưa xác minh.",
+          "Nếu vẫn phân vân, chia sẻ kết quả này để nhờ người thân kiểm tra."
+        ],
+        "versions": {
+          "brands": "2026-10-28.2",
+          "brands_sha256": "0d536764f9cf0a9384290a24fe25a3ced1b6b939769111b6f26fc92460866293",
+          "python_unicode": "13.0.0",
+          "features": "url-v1",
+          "psl_sha256": "0232f4df0831911356e8ee1f4d5c3b6b12c0ed3f6bd66b0f81c8ab5d3d49e9ca",
+          "confusables_sha256": "091c7f82fc39ef208faf8f94d29c244de99254675e09de163160c810d13ef22a",
+          "unicode_confusables": "17.0.0"
+        }
+      }
+    },
+    {
+      "id": "LIVE03",
+      "expected": "high, real threat match",
+      "passed": true,
+      "actual": {
+        "id": "4974d77d-8c7e-466e-918d-037dcf5272ac",
+        "checked_at": "2026-11-19T05:25:24.265857Z",
+        "verdict": "high",
+        "title": "Nguy cơ cao",
+        "summary": "Đường link có thể dẫn đến lừa đảo hoặc nội dung gây hại. Hãy dừng trước khi mở.",
+        "url": {
+          "original": "https://testsafebrowsing.appspot.com/s/phishing.html",
+          "hostname": "testsafebrowsing.appspot.com",
+          "unicode_hostname": "testsafebrowsing.appspot.com",
+          "registered_domain": "testsafebrowsing.appspot.com",
+          "suffix": "appspot.com",
+          "scheme": "https",
+          "port": null,
+          "has_userinfo": false
+        },
+        "signals": [
+          {
+            "code": "threat_match",
+            "title": "Nguồn tin ghi nhận nguy cơ",
+            "detail": "Google Safe Browsing ghi nhận nguy cơ có thể xảy ra: SOCIAL_ENGINEERING",
+            "severity": "strong",
+            "source": "threat"
+          },
+          {
+            "code": "model_alert",
+            "title": "Mô hình phát hiện mẫu URL cần thận trọng",
+            "detail": "Điểm phân loại vượt ngưỡng đã chọn trên validation. Điểm mô hình không phải xác suất lừa đảo đã hiệu chỉnh.",
+            "severity": "strong",
+            "source": "model"
+          }
+        ],
+        "model": {
+          "status": "ready",
+          "version": "20261029T135127Z",
+          "feature_version": "url-v1",
+          "policy_version": "model-ti-rules-v1",
+          "score": 0.927851570426132,
+          "threshold": 0.7446086243613848,
+          "alert": true,
+          "release_stage": "research"
+        },
+        "threat": {
+          "source": "Google Safe Browsing",
+          "status": "detected",
+          "checked_at": "2026-11-19T05:25:24.254107Z",
+          "feed_received_at": null,
+          "expires_at": "2026-11-19T05:30:24.254107Z",
+          "cached": false,
+          "categories": [
+            "SOCIAL_ENGINEERING"
+          ],
+          "attribution": "Advisory provided by Google",
+          "advisory_url": "https://developers.google.com/safe-browsing/v4/support",
+          "partial": false,
+          "checks": [
+            {
+              "source": "Google Safe Browsing",
+              "status": "detected",
+              "checked_at": "2026-11-19T05:25:24.254107Z",
+              "feed_received_at": null,
+              "expires_at": "2026-11-19T05:30:24.254107Z",
+              "cached": false,
+              "categories": [
+                "SOCIAL_ENGINEERING"
+              ],
+              "attribution": "Advisory provided by Google",
+              "advisory_url": "https://developers.google.com/safe-browsing/v4/support",
+              "partial": false,
+              "checks": []
+            },
+            {
+              "source": "OpenPhish Community",
+              "status": "not_found",
+              "checked_at": "2026-11-19T05:25:24.113857Z",
+              "feed_received_at": "2026-11-19T05:25:24.016831Z",
+              "expires_at": "2026-11-19T06:25:24.016831Z",
+              "cached": true,
+              "categories": [],
+              "attribution": null,
+              "advisory_url": null,
+              "partial": false,
+              "checks": []
+            }
+          ]
+        },
+        "redirect": {
+          "status": "not_requested",
+          "detail": "Không truy cập URL gốc hoặc URL đích. Chưa xác minh chuyển hướng."
+        },
+        "limitations": [
+          "Chỉ phân tích địa chỉ URL; không xem nội dung trang, tuổi miền, DNS hay chứng chỉ.",
+          "Có thể bỏ sót đường link lừa đảo hoặc cảnh báo nhầm. Không có kết quả an toàn tuyệt đối.",
+          "Đây là mô hình thử nghiệm, được đánh giá hồi cứu theo ngày thu dữ liệu; chưa kiểm chứng khả năng phát hiện đường link mới chưa có trong nguồn tin đe doạ.",
+          "Mô hình chưa đạt mục tiêu cảnh báo nhầm tối đa 5% trên tập kiểm thử độc lập. Hãy xác minh thêm qua nguồn chính thức."
+        ],
+        "actions": [
+          "Mở ứng dụng chính thức hoặc tự nhập địa chỉ đã biết để kiểm tra.",
+          "Không nhập mật khẩu, mã OTP hoặc chuyển tiền khi chưa xác minh.",
+          "Nếu vẫn phân vân, chia sẻ kết quả này để nhờ người thân kiểm tra."
+        ],
+        "versions": {
+          "brands": "2026-10-28.2",
+          "brands_sha256": "0d536764f9cf0a9384290a24fe25a3ced1b6b939769111b6f26fc92460866293",
+          "python_unicode": "13.0.0",
+          "features": "url-v1",
+          "psl_sha256": "0232f4df0831911356e8ee1f4d5c3b6b12c0ed3f6bd66b0f81c8ab5d3d49e9ca",
+          "confusables_sha256": "091c7f82fc39ef208faf8f94d29c244de99254675e09de163160c810d13ef22a",
+          "unicode_confusables": "17.0.0"
+        }
+      }
+    },
+    {
+      "id": "LIVE04",
+      "expected": "caution, true hostname and userinfo signal",
+      "passed": true,
+      "actual": {
+        "id": "5818b9f1-8791-406b-bf30-b4fc3ed82ff0",
+        "checked_at": "2026-11-19T05:25:24.494202Z",
+        "verdict": "caution",
+        "title": "Cần thận trọng",
+        "summary": "Có dấu hiệu cần xác minh. Hãy đối chiếu qua ứng dụng hoặc trang chính thức.",
+        "url": {
+          "original": "https://paypal.com@verify.example.org/login",
+          "hostname": "verify.example.org",
+          "unicode_hostname": "verify.example.org",
+          "registered_domain": "example.org",
+          "suffix": "org",
+          "scheme": "https",
+          "port": null,
+          "has_userinfo": true
+        },
+        "signals": [
+          {
+            "code": "misleading_userinfo",
+            "title": "Có nội dung trước dấu @",
+            "detail": "Máy chủ nhận kết nối là verify.example.org. Nội dung trước @ không phải tên miền đích.",
+            "severity": "strong",
+            "source": "url"
+          }
+        ],
+        "model": {
+          "status": "ready",
+          "version": "20261029T135127Z",
+          "feature_version": "url-v1",
+          "policy_version": "model-ti-rules-v1",
+          "score": 0.3522252742951746,
+          "threshold": 0.7446086243613848,
+          "alert": false,
+          "release_stage": "research"
+        },
+        "threat": {
+          "source": "Google Safe Browsing + OpenPhish Community",
+          "status": "not_found",
+          "checked_at": "2026-11-19T05:25:24.494202Z",
+          "feed_received_at": null,
+          "expires_at": "2026-11-19T05:26:24.493203Z",
+          "cached": false,
+          "categories": [],
+          "attribution": null,
+          "advisory_url": null,
+          "partial": false,
+          "checks": [
+            {
+              "source": "Google Safe Browsing",
+              "status": "not_found",
+              "checked_at": "2026-11-19T05:25:24.493203Z",
+              "feed_received_at": null,
+              "expires_at": "2026-11-19T05:26:24.493203Z",
+              "cached": false,
+              "categories": [],
+              "attribution": null,
+              "advisory_url": null,
+              "partial": false,
+              "checks": []
+            },
+            {
+              "source": "OpenPhish Community",
+              "status": "not_found",
+              "checked_at": "2026-11-19T05:25:24.337707Z",
+              "feed_received_at": "2026-11-19T05:25:24.016831Z",
+              "expires_at": "2026-11-19T06:25:24.016831Z",
+              "cached": true,
+              "categories": [],
+              "attribution": null,
+              "advisory_url": null,
+              "partial": false,
+              "checks": []
+            }
+          ]
+        },
+        "redirect": {
+          "status": "not_requested",
+          "detail": "Không truy cập URL gốc hoặc URL đích. Chưa xác minh chuyển hướng."
+        },
+        "limitations": [
+          "Chỉ phân tích địa chỉ URL; không xem nội dung trang, tuổi miền, DNS hay chứng chỉ.",
+          "Có thể bỏ sót đường link lừa đảo hoặc cảnh báo nhầm. Không có kết quả an toàn tuyệt đối.",
+          "Đây là mô hình thử nghiệm, được đánh giá hồi cứu theo ngày thu dữ liệu; chưa kiểm chứng khả năng phát hiện đường link mới chưa có trong nguồn tin đe doạ.",
+          "Mô hình chưa đạt mục tiêu cảnh báo nhầm tối đa 5% trên tập kiểm thử độc lập. Hãy xác minh thêm qua nguồn chính thức.",
+          "Nguồn tin đe doạ chưa ghi nhận URL; điều đó không chứng minh URL hợp lệ."
+        ],
+        "actions": [
+          "Mở ứng dụng chính thức hoặc tự nhập địa chỉ đã biết để kiểm tra.",
+          "Không nhập mật khẩu, mã OTP hoặc chuyển tiền khi chưa xác minh.",
+          "Nếu vẫn phân vân, chia sẻ kết quả này để nhờ người thân kiểm tra."
+        ],
+        "versions": {
+          "brands": "2026-10-28.2",
+          "brands_sha256": "0d536764f9cf0a9384290a24fe25a3ced1b6b939769111b6f26fc92460866293",
+          "python_unicode": "13.0.0",
+          "features": "url-v1",
+          "psl_sha256": "0232f4df0831911356e8ee1f4d5c3b6b12c0ed3f6bd66b0f81c8ab5d3d49e9ca",
+          "confusables_sha256": "091c7f82fc39ef208faf8f94d29c244de99254675e09de163160c810d13ef22a",
+          "unicode_confusables": "17.0.0"
+        }
+      }
+    },
+    {
+      "id": "LIVE05",
+      "expected": "HTTP422",
+      "passed": true,
+      "actual": {
+        "http": 422
+      }
+    },
+    {
+      "id": "LIVE06",
+      "expected": "HTTP422",
+      "passed": true,
+      "actual": {
+        "http": 422
+      }
+    },
+    {
+      "id": "LIVE07",
+      "expected": "insufficient, partial source",
+      "passed": true,
+      "actual": {
+        "id": "1717360f-943b-4f06-87fd-edac9f1c8b8f",
+        "checked_at": "2026-11-19T05:25:26.022930Z",
+        "verdict": "insufficient",
+        "title": "Chưa đủ thông tin",
+        "summary": "Các kiểm tra hiện có chưa đủ để kết luận. Hãy xác minh trước khi thao tác.",
+        "url": {
+          "original": "https://www.iana.org/help/example-domains",
+          "hostname": "www.iana.org",
+          "unicode_hostname": "www.iana.org",
+          "registered_domain": "iana.org",
+          "suffix": "org",
+          "scheme": "https",
+          "port": null,
+          "has_userinfo": false
+        },
+        "signals": [],
+        "model": {
+          "status": "ready",
+          "version": "20261029T135127Z",
+          "feature_version": "url-v1",
+          "policy_version": "model-ti-rules-v1",
+          "score": 0.011327369134832786,
+          "threshold": 0.7446086243613848,
+          "alert": false,
+          "release_stage": "research"
+        },
+        "threat": {
+          "source": "Google Safe Browsing + OpenPhish Community",
+          "status": "not_configured",
+          "checked_at": "2026-11-19T05:25:26.021410Z",
+          "feed_received_at": null,
+          "expires_at": null,
+          "cached": false,
+          "categories": [],
+          "attribution": null,
+          "advisory_url": null,
+          "partial": true,
+          "checks": [
+            {
+              "source": "Google Safe Browsing",
+              "status": "not_configured",
+              "checked_at": null,
+              "feed_received_at": null,
+              "expires_at": null,
+              "cached": false,
+              "categories": [],
+              "attribution": null,
+              "advisory_url": null,
+              "partial": false,
+              "checks": []
+            },
+            {
+              "source": "OpenPhish Community",
+              "status": "not_found",
+              "checked_at": "2026-11-19T05:25:26.021410Z",
+              "feed_received_at": "2026-11-19T05:25:25.959329Z",
+              "expires_at": "2026-11-19T06:25:25.959329Z",
+              "cached": false,
+              "categories": [],
+              "attribution": null,
+              "advisory_url": null,
+              "partial": false,
+              "checks": []
+            }
+          ]
+        },
+        "redirect": {
+          "status": "not_requested",
+          "detail": "Không truy cập URL gốc hoặc URL đích. Chưa xác minh chuyển hướng."
+        },
+        "limitations": [
+          "Chỉ phân tích địa chỉ URL; không xem nội dung trang, tuổi miền, DNS hay chứng chỉ.",
+          "Có thể bỏ sót đường link lừa đảo hoặc cảnh báo nhầm. Không có kết quả an toàn tuyệt đối.",
+          "Đây là mô hình thử nghiệm, được đánh giá hồi cứu theo ngày thu dữ liệu; chưa kiểm chứng khả năng phát hiện đường link mới chưa có trong nguồn tin đe doạ.",
+          "Mô hình chưa đạt mục tiêu cảnh báo nhầm tối đa 5% trên tập kiểm thử độc lập. Hãy xác minh thêm qua nguồn chính thức.",
+          "Nguồn tin đe doạ chưa được cấu hình trên máy chủ.",
+          "Một phần nguồn tin đe doạ chưa trả được kết quả; xem trạng thái từng nguồn trong chi tiết."
+        ],
+        "actions": [
+          "Mở ứng dụng chính thức hoặc tự nhập địa chỉ đã biết để kiểm tra.",
+          "Không nhập mật khẩu, mã OTP hoặc chuyển tiền khi chưa xác minh.",
+          "Nếu vẫn phân vân, chia sẻ kết quả này để nhờ người thân kiểm tra."
+        ],
+        "versions": {
+          "brands": "2026-10-28.2",
+          "brands_sha256": "0d536764f9cf0a9384290a24fe25a3ced1b6b939769111b6f26fc92460866293",
+          "python_unicode": "13.0.0",
+          "features": "url-v1",
+          "psl_sha256": "0232f4df0831911356e8ee1f4d5c3b6b12c0ed3f6bd66b0f81c8ab5d3d49e9ca",
+          "confusables_sha256": "091c7f82fc39ef208faf8f94d29c244de99254675e09de163160c810d13ef22a",
+          "unicode_confusables": "17.0.0"
+        }
+      }
+    },
+    {
+      "id": "LIVE08",
+      "expected": "one minimal event read from PostgreSQL",
+      "passed": true,
+      "actual": {
+        "id": "495bb667-806b-4126-92c5-faff9319b21c",
+        "verdict": "no_signs",
+        "model": "20261029T135127Z",
+        "fields": [
+          "id",
+          "owner_hash",
+          "verdict",
+          "model_version",
+          "source_status",
+          "observed_hour",
+          "expires_at"
+        ]
+      }
+    },
+    {
+      "id": "LIVE09",
+      "expected": "delete only our event, keep existing IDs",
+      "passed": true,
+      "actual": {
+        "before_count": 0,
+        "after_count": 0
+      }
+    }
+  ],
+  "existing_ids_preserved": true
+}

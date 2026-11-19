@@ -1,0 +1,29 @@
+{
+  "checked_date_local": "2026-11-19",
+  "timezone": "Asia/Ho_Chi_Minh",
+  "base_commit": "e7c9a111211473056cc6f4e55b7c7ff8c2b038db",
+  "tested_source": "Local working tree; pending mobile UI edits were present during the Flutter test run.",
+  "pending_source_diff_sha256": "a7a6f145271c0aea576cd31395180c41ee54ba03892eaa106dfa890731525778",
+  "backend": {
+    "command": ".venv/Scripts/python.exe -m pytest -q backend/tests --junitxml=artifacts/w06/backend-tests.xml",
+    "tests": 132,
+    "failures": 0,
+    "errors": 0,
+    "report_sha256": "f761280a86bad6cf404a9b37843bd26cc6729188b24177531c33d347116c2509"
+  },
+  "flutter": {
+    "command": "flutter test --no-pub --reporter expanded",
+    "passed": 20,
+    "completed_successfully": true
+  },
+  "live": {
+    "passed": 9,
+    "total": 9
+  },
+  "native": {
+    "latest_attempt_date": "2026-11-19",
+    "status": "Stopped by user Esc before new end-to-end native confirmation",
+    "screenshots_inherited_from": "2026-10-29",
+    "chrome_inbound_evidence": "../w05/chrome-share.png and ../w05/lynveris-nhan-link.png, 2026-11-12"
+  }
+}
