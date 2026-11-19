@@ -1,0 +1,28 @@
+
+┌─────────────────────────────────────────────────────────┐
+│ A new version of Flutter is available!                  │
+│                                                         │
+│ To update to the latest version, run "flutter upgrade". │
+└─────────────────────────────────────────────────────────┘
+00:00 +0: loading L:/Lynveris/mobile/test/api_test.dart
+00:00 +0: L:/Lynveris/mobile/test/api_test.dart: request sends selected URL only, no message and no consent by default
+00:00 +1: L:/Lynveris/mobile/test/api_test.dart: timeout/source errors never become safe results
+00:00 +2: L:/Lynveris/mobile/test/api_test.dart: requires encrypted production API and preserves development route
+00:00 +3: L:/Lynveris/mobile/test/api_test.dart: server setup verifies Lynveris without following redirects
+00:00 +4: L:/Lynveris/mobile/test/api_test.dart: partial response cannot navigate to a result or enter history
+00:00 +5: L:/Lynveris/mobile/test/store_test.dart: storage failure is visible and does not prevent checks
+00:00 +6: L:/Lynveris/mobile/test/app_test.dart: new share suppresses a stale in-flight result
+00:00 +7: L:/Lynveris/mobile/test/app_test.dart: new share suppresses a stale in-flight result
+00:00 +8: L:/Lynveris/mobile/test/app_test.dart: new share suppresses a stale in-flight result
+00:00 +9: L:/Lynveris/mobile/test/app_test.dart: new share suppresses a stale in-flight result
+00:00 +10: L:/Lynveris/mobile/test/app_test.dart: new share suppresses a stale in-flight result
+00:00 +11: L:/Lynveris/mobile/test/app_test.dart: new share suppresses a stale in-flight result
+00:00 +12: L:/Lynveris/mobile/test/app_test.dart: new share suppresses a stale in-flight result
+00:00 +13: L:/Lynveris/mobile/test/app_test.dart: new share suppresses a stale in-flight result
+00:01 +14: L:/Lynveris/mobile/test/app_test.dart: incoming Android share reveals input above an existing result
+00:02 +15: L:/Lynveris/mobile/test/app_test.dart: can check another URL after returning from a result
+00:02 +16: L:/Lynveris/mobile/test/app_test.dart: retry resends only the URL chosen from a pasted message
+00:03 +17: L:/Lynveris/mobile/test/app_test.dart: small screen and large text remain usable
+00:03 +18: L:/Lynveris/mobile/test/app_test.dart: small report shows the real host and hides URL credentials
+00:03 +19: L:/Lynveris/mobile/test/app_test.dart: onboarding, navigation, empty history and settings work
+00:04 +20: All tests passed!

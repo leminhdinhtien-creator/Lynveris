@@ -1,0 +1,610 @@
+{
+  "checked_at": "2026-11-19T05:24:38.650261+00:00",
+  "cohort_sha256": "db43c3cf59ff94a716c0125477a4225bcc882e1c2ecc85cb2c481cf784d00cd6",
+  "scope": "development diagnostic, selection enriched with errors",
+  "model": "20261029T135127Z",
+  "total": 30,
+  "passed": 17,
+  "pass_rate": 0.5666666666666667,
+  "locked_files_unchanged": {
+    "artifacts/model-phreshphish-v1/manifest.json": true,
+    "artifacts/model-phreshphish-v1/model.joblib": true,
+    "artifacts/model-phreshphish-v1/test-evaluation.lock": true,
+    "artifacts/model-phreshphish-v1/test-report.json": true,
+    "data/phreshphish-splits-20261029-v1/split-manifest.json": true,
+    "data/phreshphish-splits-20261029-v1/test.jsonl": true,
+    "data/phreshphish-splits-20261029-v1/test_unsupported.jsonl": true,
+    "data/phreshphish-splits-20261029-v1/train.jsonl": true,
+    "data/phreshphish-splits-20261029-v1/validation.jsonl": true
+  },
+  "limitations": [
+    "Validation data used for diagnosis; this rate is not an unbiased model quality estimate.",
+    "Ten cases selected from observed errors. The cohort is intentionally difficult.",
+    "Publisher labels describe historical samples, not a current assessment of the destination.",
+    "Threat lookups disabled to isolate URL model and rules; current TI checked separately.",
+    "No model, threshold, rule or locked test is changed by this script."
+  ],
+  "selection": {
+    "created_at": "2026-11-19T05:22:33.163655+00:00",
+    "scope": "development diagnostic, selection enriched with errors",
+    "model_version": "20261029T135127Z",
+    "validation_sha256": "c0d24416b2ce3b50f72922407415698b1b090372471002e1b694b93b185449f6",
+    "positive_definition": "high or caution",
+    "threat_intelligence": false,
+    "rubric": "alert agrees with the publisher label; insufficient or HTTP failure is not a pass"
+  },
+  "discovery": {
+    "observed_at": "2026-11-19T05:22:33.122147+00:00",
+    "model": "20261029T135127Z",
+    "validation_sha256": "c0d24416b2ce3b50f72922407415698b1b090372471002e1b694b93b185449f6",
+    "sampling": "first 400 validation rows as stored",
+    "total": 400,
+    "errors": 46
+  },
+  "url_policy": "Public evidence contains hostnames and SHA256, not full destination paths.",
+  "dataset_attribution": {
+    "publisher": "PhreshPhish",
+    "dataset": "https://huggingface.co/datasets/phreshphish/phreshphish",
+    "revision": "eca603e0ecd4f698f8d4d226c088659e72681239",
+    "license": "CC BY 4.0",
+    "transformation": "30 validation records selected; URLs hashed; local API verdicts added."
+  },
+  "cases": [
+    {
+      "id": "N01",
+      "selection": "fixed_first_10_per_class",
+      "publisher_label": 0,
+      "source_id": "e77060258a4b2510caf364311c15852a458b98892c007a9c89094c67d165ce19",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "no_signs",
+      "passed": true,
+      "elapsed_seconds": 0.762,
+      "hostname": "magazine.mathchannel.jp",
+      "url_sha256": "e77060258a4b2510caf364311c15852a458b98892c007a9c89094c67d165ce19",
+      "score": 0.0538178267289489,
+      "threshold": 0.7446086243613848,
+      "signals": []
+    },
+    {
+      "id": "N02",
+      "selection": "fixed_first_10_per_class",
+      "publisher_label": 0,
+      "source_id": "309e8b19a7c8f5a01502ed367fd3945d4988b97dbfb9b91eaacada6a6eb54b7f",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "no_signs",
+      "passed": true,
+      "elapsed_seconds": 0.04,
+      "hostname": "icdcodelookup.com",
+      "url_sha256": "309e8b19a7c8f5a01502ed367fd3945d4988b97dbfb9b91eaacada6a6eb54b7f",
+      "score": 0.2332890761596694,
+      "threshold": 0.7446086243613848,
+      "signals": []
+    },
+    {
+      "id": "N03",
+      "selection": "fixed_first_10_per_class",
+      "publisher_label": 0,
+      "source_id": "70f19b4029145698d8bb7b6c946f80c94aaf39a563c7bf37e7728a3b877b07c0",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "no_signs",
+      "passed": true,
+      "elapsed_seconds": 0.011,
+      "hostname": "hc.mt-pharma.co.jp",
+      "url_sha256": "70f19b4029145698d8bb7b6c946f80c94aaf39a563c7bf37e7728a3b877b07c0",
+      "score": 0.029945086961190998,
+      "threshold": 0.7446086243613848,
+      "signals": []
+    },
+    {
+      "id": "N04",
+      "selection": "fixed_first_10_per_class",
+      "publisher_label": 0,
+      "source_id": "b655d801bf5bac78381e476df09c53a2c5ac1b15d35546d2ab42ffedc8305784",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "no_signs",
+      "passed": true,
+      "elapsed_seconds": 0.01,
+      "hostname": "smashdle.net",
+      "url_sha256": "b655d801bf5bac78381e476df09c53a2c5ac1b15d35546d2ab42ffedc8305784",
+      "score": 0.49531360018854836,
+      "threshold": 0.7446086243613848,
+      "signals": []
+    },
+    {
+      "id": "N05",
+      "selection": "fixed_first_10_per_class",
+      "publisher_label": 0,
+      "source_id": "3ca1e25e6b54443865fedd7353ff6143eae3f8ce6511a8242a4691ccb5d482d1",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "no_signs",
+      "passed": true,
+      "elapsed_seconds": 0.009,
+      "hostname": "www.wemex.com",
+      "url_sha256": "3ca1e25e6b54443865fedd7353ff6143eae3f8ce6511a8242a4691ccb5d482d1",
+      "score": 0.17442184150531304,
+      "threshold": 0.7446086243613848,
+      "signals": []
+    },
+    {
+      "id": "N06",
+      "selection": "fixed_first_10_per_class",
+      "publisher_label": 0,
+      "source_id": "6dbae8f0148501f0a117d62f74d8e7d693b6b7a53f7b4a45848e8275b1df8d37",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "no_signs",
+      "passed": true,
+      "elapsed_seconds": 0.013,
+      "hostname": "www.dollartimes.com",
+      "url_sha256": "6dbae8f0148501f0a117d62f74d8e7d693b6b7a53f7b4a45848e8275b1df8d37",
+      "score": 0.021821451225545404,
+      "threshold": 0.7446086243613848,
+      "signals": []
+    },
+    {
+      "id": "N07",
+      "selection": "fixed_first_10_per_class",
+      "publisher_label": 0,
+      "source_id": "e5fbad3b5da826885e79e05ed2daee177305e34edcd9cb7f50fe798472569b4b",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "no_signs",
+      "passed": true,
+      "elapsed_seconds": 0.018,
+      "hostname": "www.reference.com",
+      "url_sha256": "e5fbad3b5da826885e79e05ed2daee177305e34edcd9cb7f50fe798472569b4b",
+      "score": 0.01617918298265639,
+      "threshold": 0.7446086243613848,
+      "signals": []
+    },
+    {
+      "id": "N08",
+      "selection": "fixed_first_10_per_class",
+      "publisher_label": 0,
+      "source_id": "1cb66c66458f53e87019bc3d6f5cb6cc5f39ff5b72e135dc068af8ee6e8d7a14",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "no_signs",
+      "passed": true,
+      "elapsed_seconds": 0.013,
+      "hostname": "mscompass.ms-ins.com",
+      "url_sha256": "1cb66c66458f53e87019bc3d6f5cb6cc5f39ff5b72e135dc068af8ee6e8d7a14",
+      "score": 0.060550358129061725,
+      "threshold": 0.7446086243613848,
+      "signals": []
+    },
+    {
+      "id": "N09",
+      "selection": "fixed_first_10_per_class",
+      "publisher_label": 0,
+      "source_id": "2f2f938dc0c48078e8cfa8d37770e2724a259755f3270c287c32274209dbb234",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "no_signs",
+      "passed": true,
+      "elapsed_seconds": 0.052,
+      "hostname": "www.mpic.de",
+      "url_sha256": "2f2f938dc0c48078e8cfa8d37770e2724a259755f3270c287c32274209dbb234",
+      "score": 0.0043473163606016245,
+      "threshold": 0.7446086243613848,
+      "signals": []
+    },
+    {
+      "id": "N10",
+      "selection": "fixed_first_10_per_class",
+      "publisher_label": 0,
+      "source_id": "fd1c1b9e6373d198dbf648b3c7d892eb2e6247572f8bdb472dd979daaa9587f7",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "no_signs",
+      "passed": true,
+      "elapsed_seconds": 0.013,
+      "hostname": "www.ebcflex.com",
+      "url_sha256": "fd1c1b9e6373d198dbf648b3c7d892eb2e6247572f8bdb472dd979daaa9587f7",
+      "score": 0.035574245090933106,
+      "threshold": 0.7446086243613848,
+      "signals": []
+    },
+    {
+      "id": "N11",
+      "selection": "fixed_first_10_per_class",
+      "publisher_label": 1,
+      "source_id": "e93c8eac3f0ae0c0278404b7cf54559b14730a6c615fffabfc04273df91b7f63",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "caution",
+      "passed": true,
+      "elapsed_seconds": 0.025,
+      "hostname": "content-approval-date.vercel.app",
+      "url_sha256": "e93c8eac3f0ae0c0278404b7cf54559b14730a6c615fffabfc04273df91b7f63",
+      "score": 0.9957429272985509,
+      "threshold": 0.7446086243613848,
+      "signals": [
+        {
+          "code": "model_alert",
+          "severity": "strong"
+        }
+      ]
+    },
+    {
+      "id": "N12",
+      "selection": "fixed_first_10_per_class",
+      "publisher_label": 1,
+      "source_id": "995e6a43cf762f20b45843a2e5ce0bfe18d04fcfc112875732015c90106795f7",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "caution",
+      "passed": true,
+      "elapsed_seconds": 0.009,
+      "hostname": "predmgos.blogspot.com",
+      "url_sha256": "995e6a43cf762f20b45843a2e5ce0bfe18d04fcfc112875732015c90106795f7",
+      "score": 0.7645476679533151,
+      "threshold": 0.7446086243613848,
+      "signals": [
+        {
+          "code": "model_alert",
+          "severity": "strong"
+        }
+      ]
+    },
+    {
+      "id": "N13",
+      "selection": "fixed_first_10_per_class",
+      "publisher_label": 1,
+      "source_id": "76d0bd4a76a4b938ab49cebcba88bd4a7f21147744041000333e2513478f83f6",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "caution",
+      "passed": true,
+      "elapsed_seconds": 0.012,
+      "hostname": "sukicookie.cloud",
+      "url_sha256": "76d0bd4a76a4b938ab49cebcba88bd4a7f21147744041000333e2513478f83f6",
+      "score": 0.9696822720925933,
+      "threshold": 0.7446086243613848,
+      "signals": [
+        {
+          "code": "unencrypted",
+          "severity": "weak"
+        },
+        {
+          "code": "model_alert",
+          "severity": "strong"
+        }
+      ]
+    },
+    {
+      "id": "N14",
+      "selection": "fixed_first_10_per_class",
+      "publisher_label": 1,
+      "source_id": "bb965fa5d93cd1600221f89fa1816f47370bab96c4b9be588ed40bf25546d90e",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "caution",
+      "passed": true,
+      "elapsed_seconds": 0.01,
+      "hostname": "ce-sblsec-www.yflu.top",
+      "url_sha256": "bb965fa5d93cd1600221f89fa1816f47370bab96c4b9be588ed40bf25546d90e",
+      "score": 0.7868186212604557,
+      "threshold": 0.7446086243613848,
+      "signals": [
+        {
+          "code": "model_alert",
+          "severity": "strong"
+        }
+      ]
+    },
+    {
+      "id": "N15",
+      "selection": "fixed_first_10_per_class",
+      "publisher_label": 1,
+      "source_id": "e6d0874c39dde5e0f1ddb3deb61225690971e2c220e84892835466fcaf4fb7e2",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "caution",
+      "passed": true,
+      "elapsed_seconds": 0.013,
+      "hostname": "lug.theecononc.com",
+      "url_sha256": "e6d0874c39dde5e0f1ddb3deb61225690971e2c220e84892835466fcaf4fb7e2",
+      "score": 0.8674519764620845,
+      "threshold": 0.7446086243613848,
+      "signals": [
+        {
+          "code": "unencrypted",
+          "severity": "weak"
+        },
+        {
+          "code": "model_alert",
+          "severity": "strong"
+        }
+      ]
+    },
+    {
+      "id": "N16",
+      "selection": "fixed_first_10_per_class",
+      "publisher_label": 1,
+      "source_id": "d0916459367d2a4039f1d70cab2cf8512cf4ac7aa88729ef580edfed5eb28630",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "no_signs",
+      "passed": false,
+      "elapsed_seconds": 0.013,
+      "hostname": "eleve.opanbinscolton.com",
+      "url_sha256": "d0916459367d2a4039f1d70cab2cf8512cf4ac7aa88729ef580edfed5eb28630",
+      "score": 0.021227084243937412,
+      "threshold": 0.7446086243613848,
+      "signals": []
+    },
+    {
+      "id": "N17",
+      "selection": "fixed_first_10_per_class",
+      "publisher_label": 1,
+      "source_id": "1e7c4bdfca0330289e439f183979f589a93a5eced3d4f54c2cc80070a2ec1c11",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "no_signs",
+      "passed": false,
+      "elapsed_seconds": 0.015,
+      "hostname": "predmgos.blogspot.com",
+      "url_sha256": "1e7c4bdfca0330289e439f183979f589a93a5eced3d4f54c2cc80070a2ec1c11",
+      "score": 0.6831894938933749,
+      "threshold": 0.7446086243613848,
+      "signals": []
+    },
+    {
+      "id": "N18",
+      "selection": "fixed_first_10_per_class",
+      "publisher_label": 1,
+      "source_id": "941acbf599a6cde0e0ae97b5cd4bb0f1e8bc3590bbac6425336e389f34ed7739",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "no_signs",
+      "passed": false,
+      "elapsed_seconds": 0.016,
+      "hostname": "bota.mictomanics.top",
+      "url_sha256": "941acbf599a6cde0e0ae97b5cd4bb0f1e8bc3590bbac6425336e389f34ed7739",
+      "score": 0.720729809122304,
+      "threshold": 0.7446086243613848,
+      "signals": []
+    },
+    {
+      "id": "N19",
+      "selection": "fixed_first_10_per_class",
+      "publisher_label": 1,
+      "source_id": "b8b16e1e6c43978815421e08fcf0507b188187a71af573a89e3635a365095773",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "caution",
+      "passed": true,
+      "elapsed_seconds": 0.012,
+      "hostname": "appespacemanager.albergograce.it",
+      "url_sha256": "b8b16e1e6c43978815421e08fcf0507b188187a71af573a89e3635a365095773",
+      "score": 0.9872217236786665,
+      "threshold": 0.7446086243613848,
+      "signals": [
+        {
+          "code": "model_alert",
+          "severity": "strong"
+        }
+      ]
+    },
+    {
+      "id": "N20",
+      "selection": "fixed_first_10_per_class",
+      "publisher_label": 1,
+      "source_id": "0476b42405567f50d31c40fd36ad77768fe8f752622ab00cdaa54c536e8c6562",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "caution",
+      "passed": true,
+      "elapsed_seconds": 0.044,
+      "hostname": "clevermarketing.co",
+      "url_sha256": "0476b42405567f50d31c40fd36ad77768fe8f752622ab00cdaa54c536e8c6562",
+      "score": 0.9587305271940676,
+      "threshold": 0.7446086243613848,
+      "signals": [
+        {
+          "code": "unencrypted",
+          "severity": "weak"
+        },
+        {
+          "code": "model_alert",
+          "severity": "strong"
+        }
+      ]
+    },
+    {
+      "id": "R01",
+      "selection": "observed_development_mistake",
+      "publisher_label": 0,
+      "source_id": "55b308d1eedf9a78e5e9f37ce1b0ccc21b8a09f24229016ba1fa77504172361e",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "caution",
+      "passed": false,
+      "elapsed_seconds": 0.01,
+      "hostname": "melodic.net",
+      "url_sha256": "55b308d1eedf9a78e5e9f37ce1b0ccc21b8a09f24229016ba1fa77504172361e",
+      "score": 0.9721905401443433,
+      "threshold": 0.7446086243613848,
+      "signals": [
+        {
+          "code": "unencrypted",
+          "severity": "weak"
+        },
+        {
+          "code": "model_alert",
+          "severity": "strong"
+        }
+      ]
+    },
+    {
+      "id": "R02",
+      "selection": "observed_development_mistake",
+      "publisher_label": 0,
+      "source_id": "225f49a49966797012b5e5601d5c9f2b08b1f10be07b9101403cd16f79057a58",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "caution",
+      "passed": false,
+      "elapsed_seconds": 0.011,
+      "hostname": "vizient.suppliergateway.com",
+      "url_sha256": "225f49a49966797012b5e5601d5c9f2b08b1f10be07b9101403cd16f79057a58",
+      "score": 0.8860985403888809,
+      "threshold": 0.7446086243613848,
+      "signals": [
+        {
+          "code": "model_alert",
+          "severity": "strong"
+        }
+      ]
+    },
+    {
+      "id": "R03",
+      "selection": "observed_development_mistake",
+      "publisher_label": 1,
+      "source_id": "b2e592725dd738703f666aaffda190ce40b07224ce152558aa2e06b61607b6a2",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "no_signs",
+      "passed": false,
+      "elapsed_seconds": 0.011,
+      "hostname": "predmgos.blogspot.com",
+      "url_sha256": "b2e592725dd738703f666aaffda190ce40b07224ce152558aa2e06b61607b6a2",
+      "score": 0.2745781619322164,
+      "threshold": 0.7446086243613848,
+      "signals": []
+    },
+    {
+      "id": "R04",
+      "selection": "observed_development_mistake",
+      "publisher_label": 0,
+      "source_id": "89f732ef247d66a82d935cf1e18e7ea6923ab51c51a1f95068da6039572a9449",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "caution",
+      "passed": false,
+      "elapsed_seconds": 0.014,
+      "hostname": "myhealthtoolkit.com",
+      "url_sha256": "89f732ef247d66a82d935cf1e18e7ea6923ab51c51a1f95068da6039572a9449",
+      "score": 0.8035596313165341,
+      "threshold": 0.7446086243613848,
+      "signals": [
+        {
+          "code": "model_alert",
+          "severity": "strong"
+        }
+      ]
+    },
+    {
+      "id": "R05",
+      "selection": "observed_development_mistake",
+      "publisher_label": 0,
+      "source_id": "8e71fd4458dd84f03c2d82ca93287b49571d9a6dd20080cf941c8620037eea67",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "caution",
+      "passed": false,
+      "elapsed_seconds": 0.032,
+      "hostname": "dreamhomeartunion.com.au",
+      "url_sha256": "8e71fd4458dd84f03c2d82ca93287b49571d9a6dd20080cf941c8620037eea67",
+      "score": 0.8946607413981579,
+      "threshold": 0.7446086243613848,
+      "signals": [
+        {
+          "code": "model_alert",
+          "severity": "strong"
+        }
+      ]
+    },
+    {
+      "id": "R06",
+      "selection": "observed_development_mistake",
+      "publisher_label": 1,
+      "source_id": "b42d55d6d960dd408323f5c4bd55b4354685f20df1323d2be6aab594334a101b",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "no_signs",
+      "passed": false,
+      "elapsed_seconds": 0.012,
+      "hostname": "kttra.com",
+      "url_sha256": "b42d55d6d960dd408323f5c4bd55b4354685f20df1323d2be6aab594334a101b",
+      "score": 0.21268224015289255,
+      "threshold": 0.7446086243613848,
+      "signals": []
+    },
+    {
+      "id": "R07",
+      "selection": "observed_development_mistake",
+      "publisher_label": 1,
+      "source_id": "e98f490fd1ea6b58e382713f889ee219dc3257b4eb7002d8baf589a042a37936",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "no_signs",
+      "passed": false,
+      "elapsed_seconds": 0.01,
+      "hostname": "predmgos.blogspot.com",
+      "url_sha256": "e98f490fd1ea6b58e382713f889ee219dc3257b4eb7002d8baf589a042a37936",
+      "score": 0.6831894938933749,
+      "threshold": 0.7446086243613848,
+      "signals": []
+    },
+    {
+      "id": "R08",
+      "selection": "observed_development_mistake",
+      "publisher_label": 1,
+      "source_id": "c4b2dc482c5108504173c4f8a2be2105a4d2024736dddda26f4da544a8ea8f34",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "no_signs",
+      "passed": false,
+      "elapsed_seconds": 0.012,
+      "hostname": "pro-crpts.cfd",
+      "url_sha256": "c4b2dc482c5108504173c4f8a2be2105a4d2024736dddda26f4da544a8ea8f34",
+      "score": 0.4751684972679609,
+      "threshold": 0.7446086243613848,
+      "signals": []
+    },
+    {
+      "id": "R09",
+      "selection": "observed_development_mistake",
+      "publisher_label": 0,
+      "source_id": "a40e4141a16b7a20c006947c232b9f94c31138128e5b3b5ddfc2d0b6bfd72e3a",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "caution",
+      "passed": false,
+      "elapsed_seconds": 0.012,
+      "hostname": "moodle2024.uca.fr",
+      "url_sha256": "a40e4141a16b7a20c006947c232b9f94c31138128e5b3b5ddfc2d0b6bfd72e3a",
+      "score": 0.918260266443454,
+      "threshold": 0.7446086243613848,
+      "signals": [
+        {
+          "code": "model_alert",
+          "severity": "strong"
+        }
+      ]
+    },
+    {
+      "id": "R10",
+      "selection": "observed_development_mistake",
+      "publisher_label": 1,
+      "source_id": "37438bb01900c8d85672fc25f718a08fcea15e1b3eed521b1feadad7623254a6",
+      "source_date": "2025-07-02",
+      "http": 200,
+      "verdict": "no_signs",
+      "passed": false,
+      "elapsed_seconds": 0.011,
+      "hostname": "fnxx.info",
+      "url_sha256": "37438bb01900c8d85672fc25f718a08fcea15e1b3eed521b1feadad7623254a6",
+      "score": 0.17022191192311412,
+      "threshold": 0.7446086243613848,
+      "signals": []
+    }
+  ]
+}
