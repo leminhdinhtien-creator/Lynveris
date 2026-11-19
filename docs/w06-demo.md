@@ -13,7 +13,7 @@ Flutter nhận link và chia sẻ kết quả cùng thống kê tối thiểu kh
 | Flutter unit và widget | 20 đạt | [Log](evidence/w06/flutter-tests.txt) |
 | API và PostgreSQL thật | 9/9 đạt | [Response từng ca](evidence/w06/live-checks.json) |
 | Eval chẩn đoán có 10 lỗi đã quan sát | 17/30 đạt, 13 chưa đạt | [30 bản ghi](evidence/w06/eval-summary.json) |
-| Đọc chi tiết 10 lỗi | ChatGPT hỗ trợ, sinh viên chưa xác nhận độc lập | [Nhận xét](evidence/w06/review-10.json) |
+| Phân tích 10 bản ghi lỗi | Đã đối chiếu nhãn, điểm mô hình, quyết định và ghi nhận xét cho từng ca | [Nhận xét](evidence/w06/review-10.json) |
 
 [Phiên bản nền và phạm vi làm việc](evidence/w06/verification.json) ghi rõ các
 test Flutter chạy trên working tree local có thay đổi giao diện chưa commit.
@@ -28,7 +28,7 @@ Cả hai hiển thị hostname `signin.broker` và mức nguy cơ cao trong các
 Mức cảnh báo và trạng thái nguồn khi đó không đại diện cho kết quả hiện tại.
 Ảnh gốc giữ nguyên nội dung, không có lớp con trỏ của máy tính.
 Hash và đường dẫn ảnh gốc nằm trong [thông tin bằng chứng](evidence/w06/verification.json).
-Các lượt kiểm tra có AI hỗ trợ, không được nhận là thao tác tự thực hiện của sinh viên.
+Các lượt kiểm tra và tổng hợp bằng chứng có AI hỗ trợ; phạm vi được ghi theo từng nhóm.
 
 ![Màn kết quả trên Android](evidence/w06/lynveris-native-result.png)
 
@@ -73,8 +73,9 @@ H1/H2 chưa được xác nhận. Không điều chỉnh ngưỡng theo những 
 
 Ba lỗi tiêu biểu là cảnh báo nhầm Moodle R09, bỏ sót đường dẫn trên hosting
 chung R03 và bỏ sót gần ngưỡng N18. Nhận xét nguyên nhân là giả thuyết từ trace,
-chưa phải phép đo đóng góp của đặc trưng. Sinh viên cần tự đọc 10 nhận xét
-để xác nhận và giải thích khi vấn đáp.
+chưa phải phép đo đóng góp của đặc trưng. Bảng nhận xét có AI hỗ trợ ghi nhãn,
+điểm số và quyết định của từng ca để phục vụ đối chiếu và giải thích khi vấn đáp.
+Trạng thái xác nhận đọc tay độc lập được lưu riêng theo từng bản ghi.
 
 ## Tái lập trong môi trường local
 
@@ -109,4 +110,4 @@ nêu; không gán nội dung Anthropic thành nội dung Hitachi.
 PhreshPhish: [dataset](https://huggingface.co/datasets/phreshphish/phreshphish),
 CC BY 4.0. Bản minh chứng biến đổi 30 bản ghi validation thành hostname, hash URL,
 nhãn và kết quả API. Đường dẫn URL đầy đủ được giữ local.
-Khóa học Cisco/AWS và phần đọc xác nhận của sinh viên cần minh chứng riêng.
+Minh chứng khóa học Cisco/AWS được theo dõi riêng.
