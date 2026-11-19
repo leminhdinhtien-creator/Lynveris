@@ -24,6 +24,25 @@
     "latest_attempt_date": "2026-11-19",
     "status": "Stopped by user Esc before new end-to-end native confirmation",
     "screenshots_inherited_from": "2026-10-29",
-    "chrome_inbound_evidence": "../w05/chrome-share.png and ../w05/lynveris-nhan-link.png, 2026-11-12"
+    "chrome_inbound_evidence": "../w05/chrome-share.png and ../w05/lynveris-nhan-link.png, 2026-11-12",
+    "report_images": [
+      {
+        "source_local_path": "artifacts/screenshots/lynveris-live-threat.png",
+        "public_file": "lynveris-native-result.png",
+        "sha256": "b542cef4430700635448f665bdce1eddc58992e06f8d29f9c074a8cd677de10a",
+        "date": "2026-10-29",
+        "shown_event_time_local": "16:01",
+        "content_edited": false
+      },
+      {
+        "source_local_path": "artifacts/screenshots/lynveris-share-sheet.png",
+        "public_file": "lynveris-native-share.png",
+        "sha256": "7220b771eceda82ec0a581c2b947a0a8fe5eada26e9fe8154ee7e05a2911ce7d",
+        "date": "2026-10-29",
+        "shown_event_time_local": "16:10",
+        "content_edited": false
+      }
+    ],
+    "report_image_note": "Original Android captures, no desktop pointer overlay; two different checks of the same hostname, not a new 19 November run."
   }
 }

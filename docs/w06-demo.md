@@ -13,7 +13,7 @@ Flutter nhận link và chia sẻ kết quả cùng thống kê tối thiểu kh
 | Flutter unit và widget | 20 đạt | [Log](evidence/w06/flutter-tests.txt) |
 | API và PostgreSQL thật | 9/9 đạt | [Response từng ca](evidence/w06/live-checks.json) |
 | Eval chẩn đoán có 10 lỗi đã quan sát | 17/30 đạt, 13 chưa đạt | [30 bản ghi](evidence/w06/eval-summary.json) |
-| Đọc chi tiết 10 lỗi | Codex hỗ trợ, sinh viên chưa xác nhận độc lập | [Nhận xét](evidence/w06/review-10.json) |
+| Đọc chi tiết 10 lỗi | ChatGPT hỗ trợ, sinh viên chưa xác nhận độc lập | [Nhận xét](evidence/w06/review-10.json) |
 
 [Phiên bản nền và phạm vi làm việc](evidence/w06/verification.json) ghi rõ các
 test Flutter chạy trên working tree local có thay đổi giao diện chưa commit.
@@ -22,13 +22,17 @@ nguồn và PostgreSQL thật. Hai nhóm được báo tách riêng.
 
 ## Tính năng thứ ba trên Android
 
-Hai ảnh dưới là bằng chứng kế thừa ngày **29/10/2026**, ở hai lần kiểm tra
-khác nhau. Màn kết quả lúc 22:23; bảng chia sẻ lúc 22:11. Mức cảnh báo trong
-ảnh cũ không đại diện cho kết quả API ngày 19/11.
+Hai ảnh dưới là ảnh chụp trực tiếp từ Android, kế thừa ngày **29/10/2026**,
+ở hai lần kiểm tra khác nhau: màn kết quả lúc 16:01, bảng chia sẻ lúc 16:10.
+Cả hai hiển thị hostname `signin.broker` và mức nguy cơ cao trong các lượt cũ.
+Mức cảnh báo và trạng thái nguồn khi đó không đại diện cho kết quả hiện tại.
+Ảnh gốc giữ nguyên nội dung, không có lớp con trỏ của máy tính.
+Hash và đường dẫn ảnh gốc nằm trong [thông tin bằng chứng](evidence/w06/verification.json).
+Các lượt kiểm tra có AI hỗ trợ, không được nhận là thao tác tự thực hiện của sinh viên.
 
-![Màn kết quả đã nhận URL](evidence/w06/lynveris-share-result.png)
+![Màn kết quả trên Android](evidence/w06/lynveris-native-result.png)
 
-![Bảng chia sẻ kết quả của Android](evidence/w06/lynveris-android-share.png)
+![Bảng chia sẻ kết quả của Android](evidence/w06/lynveris-native-share.png)
 
 Lượt Chrome → Lynveris ngày **12/11/2026** có
 [ảnh phía Chrome](evidence/w05/chrome-share.png) và
