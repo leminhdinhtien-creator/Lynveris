@@ -100,7 +100,7 @@ flutter analyze
 flutter test
 ..\scripts\test-android-product.ps1 -Device <emulator-id> -MobileDirectory (Get-Location).Path
 flutter build apk --debug
-flutter build web --no-web-resources-cdn --dart-define=API_BASE_URL=http://127.0.0.1:8000
+flutter build web --no-web-resources-cdn --dart-define=LYNVERIS_LOCAL_RELEASE=true --dart-define=API_BASE_URL=http://127.0.0.1:8000
 ```
 
 `api_flow_test.dart` dành cho backend không-model/không-tra-nguồn. `product_flow_test.dart` dành cho model thật, hai nguồn và PostgreSQL. **Chạy qua `scripts/test-android-product.ps1`**: prebuild và kiểm tra package QA trước khi khởi động Flutter test, tránh runner ghi nhớ APK chính cũ rồi gỡ nhầm khi kết thúc. Gradle nhận cả target test và define tích hợp do Flutter3.47 tự thêm, không chỉ biến môi trường. Native guard kiểm tra package trước khi đọc/ghi preferences. Collector nhận `--product --package vn.lynveris.lynveris.qa`. Không chạy lệnh integration trực tiếp khi APK hiện tại là package chính. Ví dụ ca không-model chỉ sau khi đã prebuild/kiểm tra QA:
