@@ -1,0 +1,38 @@
+W07 security verification 25/11/2026
+Source scripts/verify_w07.py; live PostgreSQL and local API; no credentials in this file.
+
+SEC01 runtime role has SELECT/INSERT/DELETE, no administration/CREATE/TRUNCATE
+{"rolsuper": false, "rolcreatedb": false, "rolcreaterole": false, "can_select": true, "can_insert": true, "can_delete": true, "can_truncate": false, "can_create": false}
+PASS
+
+SEC02 unauthorized DDL rejected with SQLSTATE42501
+{"permission_denied": true}
+PASS
+
+SEC03 HTTP413 and no-store
+{"http": 413, "cache_control": "no-store"}
+PASS
+
+SEC04 invalid input HTTP422, no reflected private text
+{"http": 422, "private_input_reflected": false}
+PASS
+
+SEC05 different token deletes 0 and retains own event
+{"http": 200, "deleted": 0, "own_event_retained": true}
+PASS
+
+SEC06 different token deletes 0 and retains own event
+{"http": 200, "deleted": 0, "own_event_retained": true}
+PASS
+
+SEC07 no raw URL/message/token persisted
+{"columns": ["id", "owner_hash", "verdict", "model_version", "source_status", "observed_hour", "expires_at"], "raw_secret_occurrences": 0}
+PASS
+
+SEC08 existing DB IDs unchanged
+{"before_count": 0, "after_count": 0}
+PASS
+
+SEC09 30 HTTP200 then HTTP429 despite varied X-Forwarded-For
+{"statuses": [200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 429]}
+PASS

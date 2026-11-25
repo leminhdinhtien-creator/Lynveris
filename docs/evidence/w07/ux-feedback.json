@@ -1,0 +1,38 @@
+{
+  "recorded_on": "2026-11-25",
+  "source": "Existing messages from the project owner in this conversation, before W07",
+  "participant_count": 1,
+  "feedback_count": 3,
+  "scope": "Three real comments from the same user; not a three-person study or H2 pilot.",
+  "items": [
+    {
+      "id": "UX01",
+      "user": "U01 project owner",
+      "original_excerpt": "quét ra lừa đảo hay không lừa đảo gì nó cungx có cảnh báo không à",
+      "need": "Differentiate the conclusion and next action for each evidence state.",
+      "change": "Verdict-specific primary action, concise reason and a separate limits section.",
+      "verification": "Real IANA URL returns no_signs and the View evidence action; no model threshold change."
+    },
+    {
+      "id": "UX02",
+      "user": "U01 project owner",
+      "original_excerpt": "tui muốn có nhiều thông tin hơn để người dùng an tâm sài",
+      "need": "See why the result was returned and what was checked.",
+      "change": "Actual hostname, registered domain and path; separate URL rules, model and each source with timestamps.",
+      "verification": "Live IANA check shows Google and OpenPhish separately as not_found."
+    },
+    {
+      "id": "UX03",
+      "user": "U01 project owner",
+      "original_excerpt": "nhập link xong kiểu nó xoay xoay nhìn nó công nghệ tí",
+      "need": "Readable, distinct progress state during a scan.",
+      "change": "Radar animation, actual hostname, pending-request text, back action and reduced-motion support.",
+      "verification": "Real pending HTTP request captured in browser; no invented scan percentages."
+    }
+  ],
+  "screenshots": {
+    "before": "29 October native Android captures; original files retained",
+    "after": "25 November Flutter Web mobile viewport 390x844, real local backend and sources",
+    "comparison_limit": "Screens compare presentation; sample URLs differ between result images. This is not an accuracy comparison."
+  }
+}

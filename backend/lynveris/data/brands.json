@@ -1,0 +1,18 @@
+{
+  "version": "2026-10-28.2",
+  "reviewed_on": "2026-10-28",
+  "purpose": "Evidence for identity comparisons, never an allowlist of safe pages. Non-exhaustive.",
+  "brands": [
+    {"name": "Google", "tokens": ["google"], "domains": ["google.com"], "source": "https://developers.google.com/safe-browsing/v4/lookup-api"},
+    {"name": "Apple", "tokens": ["apple"], "domains": ["apple.com"], "source": "https://www.apple.com/"},
+    {"name": "PayPal", "tokens": ["paypal"], "domains": ["paypal.com"], "source": "https://www.paypal.com/"},
+    {"name": "Vietcombank", "tokens": ["vietcombank"], "domains": ["vietcombank.com.vn"], "source": "https://www.vietcombank.com.vn/"},
+    {"name": "BIDV", "tokens": ["bidv"], "domains": ["bidv.com.vn"], "source": "https://bidv.com.vn/"},
+    {"name": "Techcombank", "tokens": ["techcombank"], "domains": ["techcombank.com"], "source": "https://techcombank.com/"},
+    {"name": "MB Bank", "tokens": ["mbbank"], "domains": ["mbbank.com.vn"], "source": "https://www.mbbank.com.vn/"},
+    {"name": "Agribank", "tokens": ["agribank"], "domains": ["agribank.com.vn"], "source": "https://www.agribank.com.vn/"},
+    {"name": "Microsoft", "tokens": ["microsoft"], "domains": ["microsoft.com"], "source": "https://www.microsoft.com/"},
+    {"name": "MoMo", "tokens": ["momo"], "domains": ["momo.vn"], "source": "https://www.momo.vn/"},
+    {"name": "Zalo", "tokens": ["zalo"], "domains": ["zalo.me"], "source": "https://zalo.me/vi/"}
+  ]
+}

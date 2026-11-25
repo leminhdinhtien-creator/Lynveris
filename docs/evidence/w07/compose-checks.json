@@ -1,0 +1,60 @@
+{
+  "checked_at": "2026-11-25T13:05:22.138706+00:00",
+  "environment": "GitHub Actions Ubuntu Docker Compose",
+  "checks": [
+    {
+      "check": "PostgreSQL readiness",
+      "actual": 200,
+      "expected": 200,
+      "passed": true
+    },
+    {
+      "check": "Unconfigured model is transparent",
+      "actual": "unavailable",
+      "expected": "unavailable",
+      "passed": true
+    },
+    {
+      "check": "No false clear verdict without model",
+      "actual": "insufficient",
+      "expected": "insufficient",
+      "passed": true
+    },
+    {
+      "check": "Invalid scheme rejected",
+      "actual": 422,
+      "expected": 422,
+      "passed": true
+    },
+    {
+      "check": "Oversize body rejected",
+      "actual": 413,
+      "expected": 413,
+      "passed": true
+    },
+    {
+      "check": "Rejection not cached",
+      "actual": "no-store",
+      "expected": "no-store",
+      "passed": true
+    },
+    {
+      "check": "API runs as non-root",
+      "actual": "10001",
+      "expected": "10001",
+      "passed": true
+    },
+    {
+      "check": "Read-only root filesystem",
+      "actual": "true",
+      "expected": "true",
+      "passed": true
+    },
+    {
+      "check": "Database port not published",
+      "actual": "",
+      "expected": "",
+      "passed": true
+    }
+  ]
+}

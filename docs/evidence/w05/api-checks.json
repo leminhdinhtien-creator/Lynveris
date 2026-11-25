@@ -1,0 +1,420 @@
+{
+  "checked_at": "2026-11-12T12:52:28.163195+00:00",
+  "scope": "W05 functional API checks, separate from locked research evaluation",
+  "total": 18,
+  "passed": 18,
+  "locked_files_unchanged": true,
+  "cases": [
+    {
+      "id": "E01",
+      "name": "Trang đối chứng IANA",
+      "input": "https://www.iana.org/help/example-domains",
+      "origin": "Đối chứng tài liệu",
+      "passed": true,
+      "http": 200,
+      "verdict": "no_signs",
+      "checked_at": "2026-11-12T12:52:22.020923Z",
+      "hostname": "www.iana.org",
+      "signals": [],
+      "model": "20261029T135127Z",
+      "sources": [
+        {
+          "source": "Google Safe Browsing",
+          "status": "not_found",
+          "checked_at": "2026-11-12T12:52:22.019923Z"
+        },
+        {
+          "source": "OpenPhish Community",
+          "status": "not_found",
+          "checked_at": "2026-11-12T12:52:22.015852Z"
+        }
+      ]
+    },
+    {
+      "id": "E02",
+      "name": "Kênh học AWS Academy",
+      "input": "https://awsacademy.instructure.com/",
+      "origin": "Trang đang dùng",
+      "passed": true,
+      "http": 200,
+      "verdict": "no_signs",
+      "checked_at": "2026-11-12T12:52:22.262601Z",
+      "hostname": "awsacademy.instructure.com",
+      "signals": [],
+      "model": "20261029T135127Z",
+      "sources": [
+        {
+          "source": "Google Safe Browsing",
+          "status": "not_found",
+          "checked_at": "2026-11-12T12:52:22.251594Z"
+        },
+        {
+          "source": "OpenPhish Community",
+          "status": "not_found",
+          "checked_at": "2026-11-12T12:52:22.045444Z"
+        }
+      ]
+    },
+    {
+      "id": "E03",
+      "name": "Mẫu cảnh báo Google",
+      "input": "https://testsafebrowsing.appspot.com/s/phishing.html",
+      "origin": "Mẫu thử chính thức Google",
+      "passed": true,
+      "http": 200,
+      "verdict": "high",
+      "checked_at": "2026-11-12T12:52:22.524762Z",
+      "hostname": "testsafebrowsing.appspot.com",
+      "signals": [
+        "threat_match",
+        "model_alert"
+      ],
+      "model": "20261029T135127Z",
+      "sources": [
+        {
+          "source": "Google Safe Browsing",
+          "status": "detected",
+          "checked_at": "2026-11-12T12:52:22.522870Z"
+        },
+        {
+          "source": "OpenPhish Community",
+          "status": "not_found",
+          "checked_at": "2026-11-12T12:52:22.334439Z"
+        }
+      ]
+    },
+    {
+      "id": "E04",
+      "name": "Thương hiệu trước dấu @",
+      "input": "https://paypal.com@verify.example.org/login",
+      "origin": "URL mô phỏng",
+      "passed": true,
+      "http": 200,
+      "verdict": "caution",
+      "checked_at": "2026-11-12T12:52:22.705017Z",
+      "hostname": "verify.example.org",
+      "signals": [
+        "misleading_userinfo"
+      ],
+      "model": "20261029T135127Z",
+      "sources": [
+        {
+          "source": "Google Safe Browsing",
+          "status": "not_found",
+          "checked_at": "2026-11-12T12:52:22.703009Z"
+        },
+        {
+          "source": "OpenPhish Community",
+          "status": "not_found",
+          "checked_at": "2026-11-12T12:52:22.528762Z"
+        }
+      ]
+    },
+    {
+      "id": "E05",
+      "name": "Thương hiệu trong tên miền phụ",
+      "input": "https://paypal.com.verify.example.org/login",
+      "origin": "URL mô phỏng",
+      "passed": true,
+      "http": 200,
+      "verdict": "caution",
+      "checked_at": "2026-11-12T12:52:22.898502Z",
+      "hostname": "paypal.com.verify.example.org",
+      "signals": [
+        "brand_subdomain"
+      ],
+      "model": "20261029T135127Z",
+      "sources": [
+        {
+          "source": "Google Safe Browsing",
+          "status": "not_found",
+          "checked_at": "2026-11-12T12:52:22.897511Z"
+        },
+        {
+          "source": "OpenPhish Community",
+          "status": "not_found",
+          "checked_at": "2026-11-12T12:52:22.712013Z"
+        }
+      ]
+    },
+    {
+      "id": "E06",
+      "name": "Tên miền giống thương hiệu",
+      "input": "https://аррӏе.com/login",
+      "origin": "URL mô phỏng Unicode",
+      "passed": true,
+      "http": 200,
+      "verdict": "caution",
+      "checked_at": "2026-11-12T12:52:23.170917Z",
+      "hostname": "xn--80ak6aa92e.com",
+      "signals": [
+        "idn",
+        "brand_homograph",
+        "model_alert"
+      ],
+      "model": "20261029T135127Z",
+      "sources": [
+        {
+          "source": "Google Safe Browsing",
+          "status": "not_found",
+          "checked_at": "2026-11-12T12:52:23.169919Z"
+        },
+        {
+          "source": "OpenPhish Community",
+          "status": "not_found",
+          "checked_at": "2026-11-12T12:52:22.997605Z"
+        }
+      ]
+    },
+    {
+      "id": "E07",
+      "name": "Thương hiệu trong đường dẫn",
+      "input": "https://example.org/paypal/login",
+      "origin": "URL mô phỏng",
+      "passed": true,
+      "http": 200,
+      "verdict": "no_signs",
+      "checked_at": "2026-11-12T12:52:23.389846Z",
+      "hostname": "example.org",
+      "signals": [
+        "brand_path"
+      ],
+      "model": "20261029T135127Z",
+      "sources": [
+        {
+          "source": "Google Safe Browsing",
+          "status": "not_found",
+          "checked_at": "2026-11-12T12:52:23.388845Z"
+        },
+        {
+          "source": "OpenPhish Community",
+          "status": "not_found",
+          "checked_at": "2026-11-12T12:52:23.176918Z"
+        }
+      ]
+    },
+    {
+      "id": "E08",
+      "name": "Link rút gọn chưa rõ đích",
+      "input": "https://bit.ly/lynveris-example",
+      "origin": "URL mô phỏng",
+      "passed": true,
+      "http": 200,
+      "verdict": "caution",
+      "checked_at": "2026-11-12T12:52:23.662562Z",
+      "hostname": "bit.ly",
+      "signals": [
+        "shortener",
+        "model_alert"
+      ],
+      "model": "20261029T135127Z",
+      "sources": [
+        {
+          "source": "Google Safe Browsing",
+          "status": "not_found",
+          "checked_at": "2026-11-12T12:52:23.661562Z"
+        },
+        {
+          "source": "OpenPhish Community",
+          "status": "not_found",
+          "checked_at": "2026-11-12T12:52:23.405261Z"
+        }
+      ]
+    },
+    {
+      "id": "E09",
+      "name": "Địa chỉ dùng HTTP",
+      "input": "http://example.org/",
+      "origin": "Đối chứng giao thức",
+      "passed": true,
+      "http": 200,
+      "verdict": "caution",
+      "checked_at": "2026-11-12T12:52:23.843210Z",
+      "hostname": "example.org",
+      "signals": [
+        "unencrypted",
+        "model_alert"
+      ],
+      "model": "20261029T135127Z",
+      "sources": [
+        {
+          "source": "Google Safe Browsing",
+          "status": "not_found",
+          "checked_at": "2026-11-12T12:52:23.841210Z"
+        },
+        {
+          "source": "OpenPhish Community",
+          "status": "not_found",
+          "checked_at": "2026-11-12T12:52:23.666560Z"
+        }
+      ]
+    },
+    {
+      "id": "E10",
+      "name": "Địa chỉ IP riêng",
+      "input": "http://192.168.1.1/login",
+      "origin": "URL mô phỏng nội bộ",
+      "passed": true,
+      "http": 200,
+      "verdict": "caution",
+      "checked_at": "2026-11-12T12:52:24.109062Z",
+      "hostname": "192.168.1.1",
+      "signals": [
+        "ip_host",
+        "non_public_address",
+        "unencrypted",
+        "model_alert"
+      ],
+      "model": "20261029T135127Z",
+      "sources": [
+        {
+          "source": "Google Safe Browsing",
+          "status": "not_found",
+          "checked_at": "2026-11-12T12:52:24.108063Z"
+        },
+        {
+          "source": "OpenPhish Community",
+          "status": "not_found",
+          "checked_at": "2026-11-12T12:52:23.938483Z"
+        }
+      ]
+    },
+    {
+      "id": "E11",
+      "name": "Địa chỉ khác trong query",
+      "input": "https://example.org/?next=https%3A%2F%2Faccount.example.net%2Fverify",
+      "origin": "URL mô phỏng",
+      "passed": true,
+      "http": 200,
+      "verdict": "caution",
+      "checked_at": "2026-11-12T12:52:24.290830Z",
+      "hostname": "example.org",
+      "signals": [
+        "embedded_destination",
+        "model_alert"
+      ],
+      "model": "20261029T135127Z",
+      "sources": [
+        {
+          "source": "Google Safe Browsing",
+          "status": "not_found",
+          "checked_at": "2026-11-12T12:52:24.289830Z"
+        },
+        {
+          "source": "OpenPhish Community",
+          "status": "not_found",
+          "checked_at": "2026-11-12T12:52:24.116062Z"
+        }
+      ]
+    },
+    {
+      "id": "E12",
+      "name": "Đầu vào rỗng",
+      "input": "",
+      "origin": "Đầu vào không hỗ trợ",
+      "passed": true,
+      "http": 422,
+      "verdict": null,
+      "checked_at": null,
+      "hostname": null,
+      "signals": [],
+      "model": null,
+      "sources": []
+    },
+    {
+      "id": "E13",
+      "name": "Thiếu giao thức",
+      "input": "awsacademy.instructure.com",
+      "origin": "Đầu vào không hỗ trợ",
+      "passed": true,
+      "http": 422,
+      "verdict": null,
+      "checked_at": null,
+      "hostname": null,
+      "signals": [],
+      "model": null,
+      "sources": []
+    },
+    {
+      "id": "E14",
+      "name": "Giao thức tệp",
+      "input": "file:///private/document",
+      "origin": "Đầu vào không hỗ trợ",
+      "passed": true,
+      "http": 422,
+      "verdict": null,
+      "checked_at": null,
+      "hostname": null,
+      "signals": [],
+      "model": null,
+      "sources": []
+    },
+    {
+      "id": "E15",
+      "name": "Mã phần trăm sai",
+      "input": "https://example.org/%ZZ",
+      "origin": "Đầu vào không hỗ trợ",
+      "passed": true,
+      "http": 422,
+      "verdict": null,
+      "checked_at": null,
+      "hostname": null,
+      "signals": [],
+      "model": null,
+      "sources": []
+    },
+    {
+      "id": "E16",
+      "name": "Cổng vượt phạm vi",
+      "input": "https://example.org:99999/",
+      "origin": "Đầu vào không hỗ trợ",
+      "passed": true,
+      "http": 422,
+      "verdict": null,
+      "checked_at": null,
+      "hostname": null,
+      "signals": [],
+      "model": null,
+      "sources": []
+    },
+    {
+      "id": "E17",
+      "name": "Người dùng tắt tra nguồn",
+      "input": "https://www.iana.org/help/example-domains",
+      "origin": null,
+      "passed": true,
+      "http": 200,
+      "verdict": "no_signs",
+      "checked_at": "2026-11-12T12:52:24.310346Z",
+      "hostname": "www.iana.org",
+      "signals": [],
+      "model": "20261029T135127Z",
+      "sources": []
+    },
+    {
+      "id": "E18",
+      "name": "Nguồn Google chưa cấu hình",
+      "input": "https://www.iana.org/help/example-domains",
+      "origin": null,
+      "passed": true,
+      "http": 200,
+      "verdict": "insufficient",
+      "checked_at": "2026-11-12T12:52:26.325473Z",
+      "hostname": "www.iana.org",
+      "signals": [],
+      "model": "20261029T135127Z",
+      "sources": [
+        {
+          "source": "Google Safe Browsing",
+          "status": "not_configured",
+          "checked_at": null
+        },
+        {
+          "source": "OpenPhish Community",
+          "status": "not_found",
+          "checked_at": "2026-11-12T12:52:26.325473Z"
+        }
+      ]
+    }
+  ]
+}
