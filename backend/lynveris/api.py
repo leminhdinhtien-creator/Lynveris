@@ -45,9 +45,11 @@ class RequestGuard:
                 return
             body.extend(message.get("body", b""))
             if len(body) > 16384:
-                return await JSONResponse({"detail": "Dữ liệu gửi lên quá lớn."}, 413)(
-                    scope, receive, send
-                )
+                return await JSONResponse(
+                    {"detail": "Dữ liệu gửi lên quá lớn."},
+                    413,
+                    headers={"Cache-Control": "no-store"},
+                )(scope, receive, send)
             if not message.get("more_body", False):
                 break
         if scope["method"] != "OPTIONS":
@@ -61,7 +63,7 @@ class RequestGuard:
                 return await JSONResponse(
                     {"detail": "Bạn đã kiểm tra nhiều lần. Vui lòng chờ một phút."},
                     429,
-                    headers={"Retry-After": "60"},
+                    headers={"Retry-After": "60", "Cache-Control": "no-store"},
                 )(scope, receive, send)
             times.append(t)
             self.clients.move_to_end(key)

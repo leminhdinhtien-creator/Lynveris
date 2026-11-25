@@ -24,6 +24,12 @@ services:
         condition: service_healthy
   api:
     build: ./backend
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 128
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m
     env_file: .env
     environment:
       LYNVERIS_DATABASE_URL: postgresql+psycopg://lynveris:${POSTGRES_PASSWORD}@db:5432/lynveris

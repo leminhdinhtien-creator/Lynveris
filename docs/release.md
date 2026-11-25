@@ -1,10 +1,10 @@
-# Lynveris 1.0.0
+# Phát hành Lynveris trên Android
 
-Bản giao diện 1.1.0 cho giả lập nằm ở `artifacts/lynveris-1.1.0-local.apk`. Bản này giữ package và khóa ký của Lynveris Local để có thể cập nhật tại chỗ. Giao diện mới dùng radar trong lúc kiểm tra, với chế độ tĩnh khi thiết bị bật giảm chuyển động. Các bước build và cấu hình máy chủ bên dưới vẫn áp dụng.
+Bản 1.2.0 cho giả lập nằm ở `artifacts/lynveris-1.2.0-local.apk`. Bản này giữ package và khóa ký của Lynveris Local để cập nhật tại chỗ. Phiếu kiểm tra tách kết luận, cấu trúc URL và bằng chứng từ quy tắc, mô hình và nguồn tra cứu. Radar có chế độ tĩnh khi thiết bị bật giảm chuyển động. Model, ngưỡng và số liệu nghiên cứu giữ nguyên.
 
 ## Bản cài cho giả lập
 
-`lynveris-1.0.0-local.apk` là APK release có chữ ký của dự án, cho Android ARM64 và x86-64. Package `vn.lynveris.lynveris.local` cài riêng với bản debug và package QA. App kết nối `http://10.0.2.2:8000` qua mạng riêng của Android Emulator. Ngoại lệ HTTP chỉ dành cho địa chỉ phát triển cục bộ. Model, khóa tra nguồn và PostgreSQL nằm ở backend.
+`lynveris-1.2.0-local.apk` là APK release có chữ ký của dự án, cho Android ARM64 và x86-64. Package `vn.lynveris.lynveris.local` cài riêng với bản debug và package QA. App kết nối `http://10.0.2.2:8000` qua mạng riêng của Android Emulator. Ngoại lệ HTTP chỉ dành cho địa chỉ phát triển cục bộ. Model, khóa tra nguồn và PostgreSQL nằm ở backend.
 
 Tại thư mục repo, dùng `.venv` và `.env` đã cấu hình. Chạy `scripts/start-dev.ps1` để mở API loopback. Trong phiên kiểm thử cần giữ nguyên các bản ghi có sẵn, đặt `LYNVERIS_RETENTION_CLEANUP_ENABLED=false` riêng cho tiến trình API. Cài APK local bằng `adb install -r` trên đúng thiết bị và mở **Lynveris Local**. `/health` trả tên dịch vụ và phiên bản. `/ready` kiểm tra PostgreSQL cùng trạng thái cấu hình model và nguồn.
 

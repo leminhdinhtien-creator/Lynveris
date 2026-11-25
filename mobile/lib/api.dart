@@ -8,8 +8,9 @@ import 'build_config.dart';
 import 'store.dart';
 
 class ApiFailure implements Exception {
-  const ApiFailure(this.message);
+  const ApiFailure(this.message, {this.retryable = false});
   final String message;
+  final bool retryable;
   @override
   String toString() => message;
 }
@@ -107,25 +108,30 @@ class ApiClient {
           body is Map && body['detail'] is String
               ? body['detail']
               : 'Máy chủ chưa xử lý được. Vui lòng thử lại.',
+          retryable: response.statusCode == 429 || response.statusCode >= 500,
         );
       }
       if (body is! Map<String, dynamic> || !_validResult(body)) {
         throw const ApiFailure(
           'Kết quả máy chủ không hợp lệ. Chưa thể kết luận.',
+          retryable: true,
         );
       }
       return body;
     } on TimeoutException {
       throw const ApiFailure(
         'Máy chủ phản hồi quá lâu. Chưa có kết quả kiểm tra; vui lòng thử lại.',
+        retryable: true,
       );
     } on http.ClientException {
       throw const ApiFailure(
         'Không kết nối được máy chủ. Kiểm tra mạng và địa chỉ API trong Cài đặt. Chưa thực hiện kiểm tra.',
+        retryable: true,
       );
     } on FormatException {
       throw const ApiFailure(
         'Máy chủ trả dữ liệu không hợp lệ. Chưa thể kết luận.',
+        retryable: true,
       );
     }
   }
@@ -184,12 +190,20 @@ bool _validResult(Map<String, dynamic> result) {
         'scheme',
         'original',
       ].every((key) => url[key] is String) &&
+      (url['registered_domain'] == null ||
+          url['registered_domain'] is String) &&
       model is Map &&
       model['status'] is String &&
+      (model['alert'] == null || model['alert'] is bool) &&
       (model['score'] == null || model['score'] is num) &&
       threat is Map &&
       threat['source'] is String &&
       threat['status'] is String &&
+      (threat['categories'] == null ||
+          (threat['categories'] is List &&
+              (threat['categories'] as List).every(
+                (value) => value is String,
+              ))) &&
       (threat['expires_at'] == null || threat['expires_at'] is String) &&
       (threat['attribution'] == null || threat['attribution'] is String) &&
       (checks == null ||

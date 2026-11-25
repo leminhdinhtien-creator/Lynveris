@@ -122,7 +122,40 @@ void main() {
     await tester.tap(find.text('Kiểm tra đường link'));
     await tester.pumpAndSettle();
     expect(calls, 2);
-    expect(find.text('Cần thận trọng'), findsOneWidget);
+    expect(find.text('Cần xác minh'), findsOneWidget);
+  });
+  testWidgets('retry resends only the URL chosen from a pasted message', (
+    tester,
+  ) async {
+    final store = AppStore(MemoryStorage());
+    await store.load();
+    store.onboardingDone = true;
+    final urls = <String>[];
+    final api = ApiClient(
+      client: MockClient((request) async {
+        urls.add(jsonDecode(request.body)['url']);
+        if (urls.length == 1) throw http.ClientException('offline');
+        return http.Response.bytes(
+          utf8.encode(jsonEncode(fixtures.result())),
+          200,
+        );
+      }),
+    );
+    await tester.pumpWidget(LynverisApp(store: store, api: api));
+    await tester.pumpAndSettle();
+    const chosen = 'https://example.org/?selection=two';
+    const message = 'Đầu tiên https://example.com/ hoặc $chosen';
+    final input = find.byType(TextField);
+    await tester.enterText(input, message);
+    await tester.tap(find.text('Kiểm tra đường link'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('example.org'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(input).controller!.text, message);
+    await tester.tap(find.text('Thử lại'));
+    await tester.pumpAndSettle();
+    expect(urls, [chosen, chosen]);
+    expect(find.byType(ResultPage), findsOneWidget);
   });
   testWidgets('small screen and large text remain usable', (tester) async {
     tester.view.physicalSize = const Size(390, 844);
@@ -137,6 +170,63 @@ void main() {
     await tester.tap(find.text('Bắt đầu kiểm tra'));
     await tester.pumpAndSettle();
     expect(find.byType(TextField), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('small report shows the real host and hides URL credentials', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final response = fixtures.result()
+      ..['verdict'] = 'caution'
+      ..['model'] = {'status': 'ready', 'alert': false}
+      ..['signals'] = [
+        {
+          'code': 'misleading_userinfo',
+          'source': 'url',
+          'severity': 'strong',
+          'title': 'Có nội dung trước dấu @',
+          'detail': 'Máy chủ thực tế là example.com.',
+        },
+      ];
+    response['url'] = {
+      ...response['url'] as Map,
+      'has_userinfo': true,
+      'registered_domain': 'example.com',
+    };
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: lynverisTheme(),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: const TextScaler.linear(1.5)),
+          child: child!,
+        ),
+        home: ResultPage(result: response),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Cần xác minh'), findsOneWidget);
+    expect(find.text('example.com', findRichText: true), findsWidgets);
+    expect(
+      find.textContaining('token=secret', findRichText: true),
+      findsNothing,
+    );
+    expect(
+      find.textContaining('user:secret', findRichText: true),
+      findsNothing,
+    );
+    final details = find.text('Xem dấu hiệu');
+    await tester.ensureVisible(details);
+    await tester.tap(details);
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('Máy chủ thực tế nằm sau dấu @'),
+      findsOneWidget,
+    );
+    expect(find.text('Tra cứu đang tắt'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
   testWidgets('onboarding, navigation, empty history and settings work', (

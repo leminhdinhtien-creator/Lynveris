@@ -3,14 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/link.dart';
 
 import 'api.dart';
 import 'build_config.dart';
+import 'result_page.dart';
 import 'store.dart';
 import 'url_input.dart';
 import 'visuals.dart';
+
+export 'result_page.dart' show ResultPage, verdictLabel;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -109,11 +110,13 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int _page = 0;
   final _input = TextEditingController();
+  final _errorKey = GlobalKey();
   final _channel = const MethodChannel('vn.lynveris/share');
   bool _busy = false;
   String _scanHost = '';
   int _requestGeneration = 0;
   String? _error;
+  String? _retryUrl;
   AppStore get store => widget.store;
   @override
   void initState() {
@@ -145,6 +148,7 @@ class _AppShellState extends State<AppShell> {
         _input.text = text.length <= 12000 ? text : text.substring(0, 12000);
         _page = 0;
         _error = null;
+        _retryUrl = null;
       });
       // A new Android share must reveal its input even while a result/dialog is open.
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -161,35 +165,56 @@ class _AppShellState extends State<AppShell> {
   }
 
   Future<void> _paste() async {
+    final generation = _requestGeneration;
     try {
       final data = await Clipboard.getData(Clipboard.kTextPlain);
-      if (!mounted) {
-        return;
-      }
+      if (!mounted || generation != _requestGeneration) return;
       if (data?.text == null || data!.text!.trim().isEmpty) {
-        setState(
-          () => _error =
-              'Chưa có nội dung để dán. Bạn có thể nhập đường link trực tiếp.',
+        _showError(
+          'Chưa có nội dung để dán. Bạn có thể nhập đường link trực tiếp.',
         );
         return;
       }
       _receive(data.text!);
     } catch (_) {
-      if (mounted) {
-        setState(
-          () => _error = 'Chưa đọc được bộ nhớ tạm. Bạn có thể nhập trực tiếp hoặc chia sẻ đường link vào Lynveris.',
+      if (mounted && generation == _requestGeneration) {
+        _showError(
+          'Chưa đọc được bộ nhớ tạm. Hãy nhập link hoặc chia sẻ vào Lynveris.',
         );
       }
     }
   }
 
-  Future<void> _check() async {
+  void _showError(String message, {String? retryUrl}) {
+    setState(() {
+      _error = message;
+      _retryUrl = retryUrl;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final target = _errorKey.currentContext;
+      if (!mounted || _error != message || target == null) return;
+      unawaited(
+        Scrollable.ensureVisible(
+          target,
+          alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+          duration: MediaQuery.disableAnimationsOf(target)
+              ? Duration.zero
+              : const Duration(milliseconds: 180),
+        ),
+      );
+    });
+  }
+
+  Future<void> _check({String? retryUrl}) async {
     if (_busy) return;
+    final startGeneration = _requestGeneration;
     FocusScope.of(context).unfocus();
-    final urls = extractUrls(_input.text);
+    final urls = retryUrl == null ? extractUrls(_input.text) : [retryUrl];
     if (urls.isEmpty) {
-      setState(
-        () => _error = 'Chưa tìm thấy đường link hợp lệ. Hãy nhập đầy đủ http:// hoặc https://.',
+      _showError(
+        _input.text.trim().isEmpty
+            ? 'Hãy nhập hoặc dán đường link cần kiểm tra.'
+            : 'Chưa tìm thấy đường link hợp lệ. Hãy nhập đầy đủ http:// hoặc https://.',
       );
       return;
     }
@@ -247,7 +272,13 @@ class _AppShellState extends State<AppShell> {
       );
     }
     final urlToCheck = selected;
-    if (urlToCheck == null || !mounted) {
+    if (urlToCheck == null ||
+        !mounted ||
+        startGeneration != _requestGeneration) {
+      return;
+    }
+    if (urlToCheck.runes.length > 4096) {
+      _showError('Đường link vượt quá 4.096 ký tự.');
       return;
     }
     final generation = ++_requestGeneration;
@@ -259,6 +290,7 @@ class _AppShellState extends State<AppShell> {
       _busy = true;
       _scanHost = Uri.tryParse(urlToCheck)?.host ?? '';
       _error = null;
+      _retryUrl = null;
     });
     try {
       final result = await widget.api.check(urlToCheck, store);
@@ -285,18 +317,24 @@ class _AppShellState extends State<AppShell> {
         unawaited(
           Navigator.push<void>(
             context,
-            _resultRoute(result, dwell == Duration.zero),
+            _resultRoute(result, dwell == Duration.zero, () {
+              Navigator.of(context).pop();
+              if (generation == _requestGeneration) {
+                unawaited(_check(retryUrl: urlToCheck));
+              }
+            }),
           ),
         );
       }
     } on ApiFailure catch (e) {
       if (mounted && generation == _requestGeneration) {
-        setState(() => _error = e.message);
+        _showError(e.message, retryUrl: e.retryable ? urlToCheck : null);
       }
     } catch (_) {
       if (mounted && generation == _requestGeneration) {
-        setState(
-          () => _error = 'Chưa hoàn tất kiểm tra. Vui lòng thử lại; hiện chưa có kết luận.',
+        _showError(
+          'Chưa hoàn tất kiểm tra. Vui lòng thử lại; hiện chưa có kết luận.',
+          retryUrl: urlToCheck,
         );
       }
     } finally {
@@ -399,17 +437,7 @@ class _AppShellState extends State<AppShell> {
                             border: Border(top: BorderSide(color: edge)),
                           ),
                           padding: const EdgeInsets.fromLTRB(18, 10, 18, 8),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              if (_error case final message?)
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 8),
-                                  child: _Notice(message),
-                                ),
-                              _checkButton(),
-                            ],
-                          ),
+                          child: _checkButton(),
                         ),
                     ],
                   ),
@@ -441,10 +469,19 @@ class _AppShellState extends State<AppShell> {
   }
 
   Widget _checkButton() => FilledButton.icon(
-    onPressed: store.apiBase.isEmpty ? () => _selectPage(2) : _check,
-    icon: const Icon(Icons.radar_rounded, color: aqua),
+    onPressed: store.apiBase.isEmpty
+        ? () => _selectPage(2)
+        : () => _check(retryUrl: _retryUrl),
+    icon: Icon(
+      _retryUrl != null ? Icons.refresh_rounded : Icons.radar_rounded,
+      color: aqua,
+    ),
     label: Text(
-      store.apiBase.isEmpty ? 'Thiết lập kết nối' : 'Kiểm tra đường link',
+      store.apiBase.isEmpty
+          ? 'Thiết lập kết nối'
+          : _retryUrl != null
+          ? 'Thử lại'
+          : 'Kiểm tra đường link',
     ),
   );
 
@@ -486,7 +523,10 @@ class _AppShellState extends State<AppShell> {
                     tooltip: 'Xoá nội dung',
                     onPressed: () {
                       _input.clear();
-                      setState(() => _error = null);
+                      setState(() {
+                        _error = null;
+                        _retryUrl = null;
+                      });
                     },
                     icon: const Icon(Icons.close_rounded, size: 20),
                   ),
@@ -508,7 +548,39 @@ class _AppShellState extends State<AppShell> {
                   counterText: '',
                 ),
                 onChanged: (_) {
-                  if (_error != null) setState(() => _error = null);
+                  if (_error != null) {
+                    setState(() {
+                      _error = null;
+                      _retryUrl = null;
+                    });
+                  }
+                },
+              ),
+              if (_error case final message?)
+                Padding(
+                  key: _errorKey,
+                  padding: const EdgeInsets.only(top: 8),
+                  child: _Notice(message),
+                ),
+              ValueListenableBuilder<TextEditingValue>(
+                valueListenable: _input,
+                builder: (context, value, _) {
+                  final urls = extractUrls(value.text);
+                  if (urls.isEmpty) return const SizedBox.shrink();
+                  final description = urls.length == 1
+                      ? 'Đã tìm thấy link tới ${Uri.parse(urls.single).host}'
+                      : 'Có ${urls.length} link. Bạn sẽ chọn một link để kiểm tra.';
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      description,
+                      style: const TextStyle(
+                        color: muted,
+                        fontSize: 13,
+                        height: 1.4,
+                      ),
+                    ),
+                  );
                 },
               ),
               Align(
@@ -521,11 +593,6 @@ class _AppShellState extends State<AppShell> {
                 ),
               ),
               if (wide) _checkButton(),
-              if (wide && _error != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: _Notice(_error!),
-                ),
             ],
           ),
         ),
@@ -656,13 +723,31 @@ class _AppShellState extends State<AppShell> {
                     style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
                   subtitle: Text(
-                    'Kết quả đã lưu\n${formatTime(item['checked_at'])}',
+                    '${verdictLabel(item['verdict'])}\n${formatTime(item['checked_at'])} · Bản lưu',
                     style: const TextStyle(color: muted, height: 1.45),
                   ),
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute<void>(
-                      builder: (_) => ResultPage(result: item),
+                      builder: (resultContext) => ResultPage(
+                        result: item,
+                        onRecheck: () {
+                          Navigator.pop(resultContext);
+                          _input.clear();
+                          setState(() {
+                            _page = 0;
+                            _retryUrl = null;
+                            _error = null;
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Hãy dán lại URL gốc. Lịch sử chỉ giữ địa chỉ máy chủ.',
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ),
                   trailing: IconButton(
@@ -810,354 +895,6 @@ class _WelcomeHero extends StatelessWidget {
   );
 }
 
-class ResultPage extends StatefulWidget {
-  const ResultPage({super.key, required this.result});
-  final Map<String, dynamic> result;
-  @override
-  State<ResultPage> createState() => _ResultPageState();
-}
-
-class _ResultPageState extends State<ResultPage> {
-  Timer? _expiryTimer;
-  Map<String, dynamic> get result => widget.result;
-  @override
-  void initState() {
-    super.initState();
-    final expiry = DateTime.tryParse(result['threat']?['expires_at'] ?? '');
-    if (expiry != null && expiry.isAfter(DateTime.now())) {
-      _expiryTimer = Timer(expiry.difference(DateTime.now()), () {
-        if (mounted) {
-          setState(() {});
-        }
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _expiryTimer?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final historical = result['history_redacted'] == true;
-    final expiry = DateTime.tryParse(result['threat']?['expires_at'] ?? '');
-    final expired =
-        result['threat']?['status'] == 'detected' &&
-        (expiry == null || !expiry.isAfter(DateTime.now()));
-    final archival = historical || expired;
-    final verdict = archival ? 'insufficient' : result['verdict'] as String;
-    final color = verdictColor(verdict),
-        url = result['url'] as Map,
-        threat = result['threat'] as Map,
-        model = result['model'] as Map;
-    final signals = (result['signals'] as List)
-        .where((s) => !archival || s['source'] != 'threat')
-        .toList();
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(historical ? 'Kết quả đã lưu' : 'Kết quả kiểm tra'),
-      ),
-      body: PageBody(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            MissionHeader(
-              label: archival ? 'KẾT QUẢ ĐÃ LƯU' : 'KẾT QUẢ PHÂN TÍCH',
-              title: archival
-                  ? 'Kết quả tại lần kiểm tra trước'
-                  : result['title'],
-              description: archival
-                  ? 'Kết quả được lưu từ lần trước. Dán lại URL gốc để kiểm tra hiện tại.'
-                  : result['summary'],
-              icon: verdictIcon(verdict),
-              accent: switch (verdict) {
-                'high' => const Color(0xFFFFA8B3),
-                'caution' => const Color(0xFFFFCF89),
-                'no_signs' => aqua,
-                _ => const Color(0xFFC2CAFF),
-              },
-            ),
-            const SizedBox(height: 12),
-            SurfaceCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Glyph(Icons.language_rounded, color: color, size: 35),
-                      const SizedBox(width: 10),
-                      const Expanded(child: Eyebrow('TÊN MIỀN THỰC TẾ')),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  SelectableText(
-                    url['hostname'],
-                    textDirection: TextDirection.ltr,
-                    style: const TextStyle(
-                      fontSize: 23,
-                      fontWeight: FontWeight.w800,
-                      height: 1.2,
-                    ),
-                  ),
-                  if (url['unicode_hostname'] != url['hostname'])
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: SelectableText(
-                        'Unicode: ${url['unicode_hostname']}',
-                        textDirection: TextDirection.ltr,
-                      ),
-                    ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Miền đăng ký: ${url['registered_domain'] ?? 'Địa chỉ IP'}',
-                    style: const TextStyle(color: muted, height: 1.4),
-                  ),
-                  const SizedBox(height: 9),
-                  Text(
-                    'Kiểm tra lúc ${formatTime(result['checked_at'])}',
-                    style: const TextStyle(
-                      color: muted,
-                      fontSize: 12,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (historical)
-              const Padding(
-                padding: EdgeInsets.only(top: 12),
-                child: Text(
-                  'URL đã được rút về hostname khi lưu để loại thông tin riêng tư.',
-                  style: TextStyle(color: muted),
-                ),
-              ),
-            const SizedBox(height: 18),
-            const _SectionTitle(
-              Icons.analytics_outlined,
-              'Vì sao có kết quả này?',
-            ),
-            const SizedBox(height: 12),
-            if (signals.isEmpty)
-              const Text(
-                'Chưa ghi nhận dấu hiệu cụ thể từ các kiểm tra đang hoạt động. Đây chưa phải bằng chứng đường link hợp lệ.',
-                style: TextStyle(height: 1.6, color: muted),
-              ),
-            for (final s in signals.where((s) => s['severity'] != 'info'))
-              InfoRow(
-                icon: s['source'] == 'threat'
-                    ? Icons.radar
-                    : s['source'] == 'model'
-                    ? Icons.analytics_outlined
-                    : Icons.link,
-                title: s['title'],
-                text: '${s['detail']}\nNguồn: ${sourceLabel(s['source'])}',
-              ),
-            if (signals.isNotEmpty &&
-                signals.every((s) => s['severity'] == 'info'))
-              const Text(
-                'Chỉ có thông tin mô tả URL; chưa có bằng chứng đủ để kết luận.',
-                style: TextStyle(color: muted, height: 1.6),
-              ),
-            const SizedBox(height: 18),
-            const _SectionTitle(
-              Icons.tips_and_updates_outlined,
-              'Bạn nên làm gì?',
-            ),
-            const SizedBox(height: 12),
-            for (final action in result['actions'] as List)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 14),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(
-                      Icons.check_circle_outline,
-                      color: teal,
-                      size: 22,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        action,
-                        style: const TextStyle(fontSize: 16, height: 1.6),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: () async {
-                try {
-                  await SharePlus.instance.share(
-                    ShareParams(
-                      title: 'Kết quả Lynveris',
-                      text:
-                          'Lynveris · ${archival ? 'Kết quả cũ, cần kiểm tra lại' : result['title']}\nHostname: ${url['hostname']}\nThời điểm: ${formatTime(result['checked_at'])}\nHãy xác minh qua ứng dụng chính thức. Không cung cấp mật khẩu hoặc OTP.\nKết quả có thể bỏ sót hoặc cảnh báo nhầm.'
-                          '${!archival && threat['status'] == 'detected' ? '\nNguồn: ${threat['source']}\n${threat['attribution'] ?? ''}\n${threat['advisory_url'] ?? ''}' : ''}',
-                    ),
-                  );
-                } catch (_) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Chưa mở được bảng chia sẻ trên thiết bị này.',
-                        ),
-                      ),
-                    );
-                  }
-                }
-              },
-              icon: const Icon(Icons.ios_share_rounded),
-              label: const Text('Nhờ người thân xem giúp'),
-            ),
-            const SizedBox(height: 24),
-            SurfaceCard(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              child: ExpansionTile(
-                tilePadding: EdgeInsets.zero,
-                title: const Text('Nguồn và giới hạn kiểm tra'),
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${threat['source']}: ${threatStatus(threat['status'])}',
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        if (threat['partial'] == true)
-                          const Text('Tra cứu chưa đầy đủ ở một phần nguồn.'),
-                        for (final check in (threat['checks'] as List? ?? []))
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8, bottom: 8),
-                            child: Text(
-                              '${check['source']}: ${threatStatus(check['status'])}'
-                              '${check['checked_at'] != null ? '\nTra lúc: ${formatTime(check['checked_at'])}' : ''}'
-                              '${check['cached'] == true ? '\nCache còn hạn tại lúc kiểm tra.' : ''}',
-                            ),
-                          ),
-                        if (threat['checked_at'] != null)
-                          Text(
-                            'Thời điểm tra: ${formatTime(threat['checked_at'])}',
-                          ),
-                        if (threat['expires_at'] != null)
-                          Text(
-                            'Hiệu lực đến: ${formatTime(threat['expires_at'])}',
-                          ),
-                        if (threat['feed_received_at'] != null)
-                          Text(
-                            'Tải feed lúc: ${formatTime(threat['feed_received_at'])}. Đây không phải thời điểm URL được gán nhãn.',
-                          ),
-                        if (threat['cached'] == true)
-                          const Text(
-                            'Kết quả từ cache còn hạn tại lúc kiểm tra.',
-                          ),
-                        if (threat['attribution'] != null) ...[
-                          const SizedBox(height: 8),
-                          Text(threat['attribution']),
-                          Link(
-                            uri: Uri.parse(
-                              threat['source'] == 'OpenPhish Community'
-                                  ? 'https://openphish.com/phishing_feeds.html'
-                                  : 'https://developers.google.com/safe-browsing/v4/support',
-                            ),
-                            target: LinkTarget.blank,
-                            builder: (context, followLink) => TextButton(
-                              onPressed: followLink,
-                              child: const Text('Thông tin về nguồn cảnh báo'),
-                            ),
-                          ),
-                          Link(
-                            uri: Uri.parse('https://www.antiphishing.org/'),
-                            target: LinkTarget.blank,
-                            builder: (context, followLink) => TextButton(
-                              onPressed: followLink,
-                              child: const Text('Tìm hiểu về lừa đảo phishing'),
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 16),
-                        Text(
-                          'Mô hình: ${model['status'] == 'ready' ? model['version'] : 'Chưa sẵn sàng'}',
-                        ),
-                        if (model['release_stage'] == 'research')
-                          const Text(
-                            'Mô hình thử nghiệm · vẫn có thể bỏ sót hoặc cảnh báo nhầm.',
-                          ),
-                        if (model['score'] != null)
-                          Text(
-                            'Điểm phân loại: ${model['score'].toStringAsFixed(3)} · ngưỡng ${model['threshold']}\nKhông phải xác suất lừa đảo.',
-                          ),
-                        const SizedBox(height: 12),
-                        for (final limitation in result['limitations'] as List)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: Text(
-                              '• $limitation',
-                              style: const TextStyle(color: muted, height: 1.6),
-                            ),
-                          ),
-                        for (final s in signals.where(
-                          (s) => s['severity'] == 'info',
-                        ))
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Text(
-                              '${s['title']}: ${s['detail']}',
-                              style: const TextStyle(color: muted, height: 1.6),
-                            ),
-                          ),
-                        if (result['versions'] is Map)
-                          Text(
-                            'Đặc trưng: ${result['versions']['features']} · thương hiệu ${result['versions']['brands']}',
-                            style: const TextStyle(fontSize: 12, color: muted),
-                          ),
-                        const SizedBox(height: 16),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 10),
-            SurfaceCard(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              child: ExpansionTile(
-                tilePadding: EdgeInsets.zero,
-                title: Text(
-                  historical ? 'Địa chỉ đã lược thông tin' : 'URL bạn đã gửi',
-                ),
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: SelectableText(
-                      url['original'],
-                      textDirection: TextDirection.ltr,
-                      style: const TextStyle(height: 1.5),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 10),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Quay lại'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key, required this.store, required this.api});
   final AppStore store;
@@ -1235,7 +972,7 @@ class _SettingsPageState extends State<SettingsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _SectionTitle(
+              const SectionTitle(
                 Icons.text_fields_rounded,
                 'Dễ đọc, dễ sử dụng',
               ),
@@ -1266,7 +1003,7 @@ class _SettingsPageState extends State<SettingsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _SectionTitle(Icons.privacy_tip_outlined, 'Quyền riêng tư'),
+              const SectionTitle(Icons.privacy_tip_outlined, 'Quyền riêng tư'),
               const SizedBox(height: 12),
               SwitchListTile.adaptive(
                 contentPadding: EdgeInsets.zero,
@@ -1420,126 +1157,30 @@ class _SettingsPageState extends State<SettingsPage> {
   );
 }
 
-class PageBody extends StatelessWidget {
-  const PageBody({super.key, required this.child});
-  final Widget child;
-  @override
-  Widget build(BuildContext context) => SingleChildScrollView(
-    padding: EdgeInsets.symmetric(
-      horizontal: MediaQuery.sizeOf(context).width < 500 ? 18 : 42,
-      vertical: MediaQuery.sizeOf(context).width < 500 ? 14 : 28,
-    ),
-    child: Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 700),
-        child: child,
-      ),
-    ),
-  );
-}
-
-Route<void> _resultRoute(Map<String, dynamic> result, bool reduceMotion) =>
-    PageRouteBuilder<void>(
-      transitionDuration: reduceMotion
-          ? Duration.zero
-          : const Duration(milliseconds: 300),
-      reverseTransitionDuration: reduceMotion
-          ? Duration.zero
-          : const Duration(milliseconds: 220),
-      pageBuilder: (context, animation, secondaryAnimation) =>
-          ResultPage(result: result),
-      transitionsBuilder: (context, animation, secondaryAnimation, child) =>
-          FadeTransition(
-            opacity: animation.drive(CurveTween(curve: Curves.easeOutCubic)),
-            child: SlideTransition(
-              position: animation.drive(
-                Tween(begin: const Offset(0, .025), end: Offset.zero),
-              ),
-              child: child,
-            ),
+Route<void> _resultRoute(
+  Map<String, dynamic> result,
+  bool reduceMotion,
+  VoidCallback onRecheck,
+) => PageRouteBuilder<void>(
+  transitionDuration: reduceMotion
+      ? Duration.zero
+      : const Duration(milliseconds: 300),
+  reverseTransitionDuration: reduceMotion
+      ? Duration.zero
+      : const Duration(milliseconds: 220),
+  pageBuilder: (context, animation, secondaryAnimation) =>
+      ResultPage(result: result, onRecheck: onRecheck),
+  transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+      FadeTransition(
+        opacity: animation.drive(CurveTween(curve: Curves.easeOutCubic)),
+        child: SlideTransition(
+          position: animation.drive(
+            Tween(begin: const Offset(0, .025), end: Offset.zero),
           ),
-    );
-
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.icon, this.title);
-  final IconData icon;
-  final String title;
-
-  @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Glyph(icon, size: 36),
-      const SizedBox(width: 10),
-      Expanded(
-        child: Text(
-          title,
-          style: const TextStyle(
-            fontSize: 18,
-            height: 1.25,
-            fontWeight: FontWeight.w800,
-          ),
+          child: child,
         ),
       ),
-    ],
-  );
-}
-
-class Eyebrow extends StatelessWidget {
-  const Eyebrow(this.text, {super.key});
-  final String text;
-  @override
-  Widget build(BuildContext context) => Text(
-    text,
-    style: const TextStyle(
-      fontSize: 11,
-      letterSpacing: 1.8,
-      fontWeight: FontWeight.w700,
-      color: teal,
-    ),
-  );
-}
-
-class InfoRow extends StatelessWidget {
-  const InfoRow({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.text,
-  });
-  final IconData icon;
-  final String title, text;
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 14),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Glyph(icon),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                text,
-                style: const TextStyle(fontSize: 15, color: muted, height: 1.6),
-              ),
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
-}
+);
 
 Future<bool> confirm(BuildContext context, String title) async =>
     await showDialog<bool>(
@@ -1559,38 +1200,3 @@ Future<bool> confirm(BuildContext context, String title) async =>
       ),
     ) ??
     false;
-String formatTime(String? value) {
-  final d = DateTime.tryParse(value ?? '')?.toLocal();
-  if (d == null) {
-    return 'Không có thời điểm';
-  }
-  String p(int n) => n.toString().padLeft(2, '0');
-  return '${p(d.hour)}:${p(d.minute)} · ${p(d.day)}/${p(d.month)}/${d.year}';
-}
-
-Color verdictColor(String v) => switch (v) {
-  'high' => const Color(0xFFA83331),
-  'caution' => const Color(0xFF885B12),
-  'no_signs' => teal,
-  _ => const Color(0xFF486373),
-};
-IconData verdictIcon(String v) => switch (v) {
-  'high' => Icons.gpp_bad_outlined,
-  'caution' => Icons.warning_amber_rounded,
-  'no_signs' => Icons.verified_user_outlined,
-  _ => Icons.help_outline_rounded,
-};
-String sourceLabel(String v) => switch (v) {
-  'model' => 'mô hình đặc trưng URL',
-  'threat' => 'tin đe doạ',
-  _ => 'phân tích URL',
-};
-String threatStatus(String? v) => switch (v) {
-  'detected' => 'Có ghi nhận tại thời điểm tra',
-  'not_found' => 'Chưa ghi nhận, không đồng nghĩa an toàn',
-  'error' => 'Lỗi tra cứu',
-  'timeout' => 'Quá thời gian chờ',
-  'quota' => 'Hết quota hoặc giới hạn lượt',
-  'not_configured' => 'Máy chủ chưa cấu hình khoá',
-  _ => 'Chưa bật tra nguồn',
-};

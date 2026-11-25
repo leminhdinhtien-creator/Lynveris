@@ -22,7 +22,13 @@ def engine_for(url):
     return create_engine(
         url,
         pool_pre_ping=True,
-        connect_args={"check_same_thread": False} if url.startswith("sqlite") else {},
+        connect_args=(
+            {"check_same_thread": False}
+            if url.startswith("sqlite")
+            else {"connect_timeout": 5}
+            if url.startswith("postgresql")
+            else {}
+        ),
     )
 
 

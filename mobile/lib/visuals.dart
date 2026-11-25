@@ -461,3 +461,124 @@ class _ScanPanelState extends State<ScanPanel>
     ),
   );
 }
+
+class PageBody extends StatelessWidget {
+  const PageBody({super.key, required this.child});
+  final Widget child;
+  @override
+  Widget build(BuildContext context) => SingleChildScrollView(
+    padding: EdgeInsets.symmetric(
+      horizontal: MediaQuery.sizeOf(context).width < 500 ? 18 : 42,
+      vertical: MediaQuery.sizeOf(context).width < 500 ? 14 : 28,
+    ),
+    child: Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 700),
+        child: child,
+      ),
+    ),
+  );
+}
+
+class SectionTitle extends StatelessWidget {
+  const SectionTitle(this.icon, this.title, {super.key});
+  final IconData icon;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Glyph(icon, size: 36),
+      const SizedBox(width: 10),
+      Expanded(
+        child: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            height: 1.25,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+class Eyebrow extends StatelessWidget {
+  const Eyebrow(this.text, {super.key});
+  final String text;
+  @override
+  Widget build(BuildContext context) => Text(
+    text,
+    style: const TextStyle(
+      fontSize: 11,
+      letterSpacing: 1.8,
+      fontWeight: FontWeight.w700,
+      color: teal,
+    ),
+  );
+}
+
+class InfoRow extends StatelessWidget {
+  const InfoRow({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.text,
+  });
+  final IconData icon;
+  final String title, text;
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 14),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Glyph(icon),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                text,
+                style: const TextStyle(fontSize: 15, color: muted, height: 1.6),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+String formatTime(String? value) {
+  final d = DateTime.tryParse(value ?? '')?.toLocal();
+  if (d == null) {
+    return 'Không có thời điểm';
+  }
+  String p(int n) => n.toString().padLeft(2, '0');
+  return '${p(d.hour)}:${p(d.minute)} · ${p(d.day)}/${p(d.month)}/${d.year}';
+}
+
+Color verdictColor(String v) => switch (v) {
+  'high' => const Color(0xFFA83331),
+  'caution' => const Color(0xFF885B12),
+  'no_signs' => teal,
+  _ => const Color(0xFF486373),
+};
+IconData verdictIcon(String v) => switch (v) {
+  'high' => Icons.gpp_bad_outlined,
+  'caution' => Icons.warning_amber_rounded,
+  'no_signs' => Icons.verified_user_outlined,
+  _ => Icons.help_outline_rounded,
+};

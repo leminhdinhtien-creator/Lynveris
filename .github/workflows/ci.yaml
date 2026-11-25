@@ -30,7 +30,7 @@ jobs:
           cache-dependency-path: backend/requirements.lock
       - run: pip install -r backend/requirements.lock && pip install --no-deps -e backend
       - run: ruff check backend scripts && ruff format --check backend scripts
-      - run: pytest backend/tests -q
+      - run: pytest backend/tests -q --junitxml=artifacts/w07/backend-tests.xml
       - name: Migrate PostgreSQL and verify API
         env:
           LYNVERIS_DATABASE_URL: postgresql+psycopg://lynveris:ci-password@127.0.0.1:5432/lynveris
@@ -44,6 +44,12 @@ jobs:
           docker compose config --quiet
           docker compose up --build -d --wait api
           curl --fail http://127.0.0.1:8000/ready
+          python scripts/check_compose.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: backend-and-compose-evidence
+          path: artifacts/w07/
   flutter:
     runs-on: ubuntu-latest
     defaults:
@@ -63,7 +69,7 @@ jobs:
           distribution: temurin
           java-version: '21'
       - run: flutter pub get
-      - run: dart format --output=none --set-exit-if-changed lib test integration_test
+      - run: dart format --output=none --set-exit-if-changed lib test integration_test test_driver
       - run: flutter analyze
       - run: flutter test
       - run: flutter build apk --debug

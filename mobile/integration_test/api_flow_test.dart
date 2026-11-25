@@ -65,13 +65,13 @@ void main() {
       // pumpAndSettle alone does not wait for external HTTP response.
       for (
         var i = 0;
-        i < 150 && find.text('example.org').evaluate().isEmpty;
+        i < 150 && find.byType(ResultPage).evaluate().isEmpty;
         i++
       ) {
         await Future<void>.delayed(const Duration(milliseconds: 100));
         await tester.pump();
       }
-      expect(find.text('Kết quả kiểm tra'), findsOneWidget);
+      expect(find.text('Phiếu kiểm tra'), findsOneWidget);
       expect(find.text('Chưa đủ thông tin'), findsOneWidget);
       expect(find.text('example.org'), findsOneWidget);
       if (const bool.fromEnvironment('CAPTURE_QA')) {
@@ -98,7 +98,7 @@ void main() {
       await tester.tap(find.text('Kiểm tra đường link'));
       for (
         var i = 0;
-        i < 150 && find.text('evil.example').evaluate().isEmpty;
+        i < 150 && find.byType(ResultPage).evaluate().isEmpty;
         i++
       ) {
         await Future<void>.delayed(const Duration(milliseconds: 100));
@@ -112,7 +112,7 @@ void main() {
       if (const bool.fromEnvironment('CAPTURE_QA')) {
         await capture('lynveris-warning');
       }
-      expect(find.text('Cần thận trọng'), findsOneWidget);
+      expect(find.text('Cần xác minh'), findsOneWidget);
       expect(find.text('evil.example'), findsOneWidget);
       if (const bool.fromEnvironment('CAPTURE_QA')) {
         final ready = File('${Directory.systemTemp.path}/qa-ready');

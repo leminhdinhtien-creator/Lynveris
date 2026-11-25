@@ -68,6 +68,28 @@ Compose chạy PostgreSQL 18, migrations trước API và health checks. Cổng 
 
 ## Kiểm tra và build
 
+### Checkpoint vận hành W07
+
+Sau lệnh `docker compose up --build -d --wait api` ở trên, chạy
+`python scripts/check_compose.py` trong môi trường đã cài requirements để kiểm tra
+PostgreSQL sẵn sàng, API chạy UID 10001, root filesystem chỉ đọc, cổng DB không
+được publish và phản hồi chặn đầu vào hoạt động. Kết quả JSON ghi tại
+`artifacts/w07/compose-checks.json`. Checkout mới chưa có model và API phải trả
+`insufficient`; đây là trạng thái thật, không nạp model giả cho CI.
+
+Không sao chép `.env.example` đè lên `.env` đang dùng. Khi thử Compose trên cùng
+máy với API native, dừng API native dùng cổng 8000 trước hoặc chọn một cấu hình
+cổng riêng. Volume Compose tách khỏi PostgreSQL native; giữ nguyên volume khi dừng.
+API được cấu hình `read_only`, bỏ capabilities và bật `no-new-privileges`.
+Biến môi trường chứa bí mật được truyền lúc chạy bằng `.env`, không COPY vào image.
+Compose hiện là cấu hình kiểm chứng phát triển; trước triển khai Internet cần
+role DB runtime riêng, model mount chỉ đọc và HTTPS theo `docs/release.md`.
+
+CI chạy lint, test backend, migration PostgreSQL, build/run Compose, kiểm tra
+container, test Flutter, build APK và web trên push/PR. Kết quả JUnit và Compose
+được lưu thành artifact `backend-and-compose-evidence`. Nếu đỏ, mở bước thất bại,
+chạy lại lệnh đó local, sửa lỗi và đợi lượt CI ở đúng commit mới.
+
 ```powershell
 .\.venv\Scripts\python.exe -m pytest backend/tests -q
 .\.venv\Scripts\python.exe -m ruff check backend scripts

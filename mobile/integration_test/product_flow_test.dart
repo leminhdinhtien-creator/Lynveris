@@ -95,13 +95,16 @@ void main() {
 
       await check('https://example.org/?private=qa-only', 1);
       expect(api.results.last['model']['status'], 'ready');
-      expect(find.text(api.results.last['title']), findsOneWidget);
+      expect(
+        find.text(verdictLabel(api.results.last['verdict'])),
+        findsOneWidget,
+      );
       expect(api.results.last['threat']['status'], 'not_found');
       expect(api.results.last['threat']['checks'].length, 2);
       await capture('lynveris-model-result');
-      await tapText('Nguồn và giới hạn kiểm tra');
-      expect(find.textContaining('OpenPhish Community:'), findsWidgets);
-      expect(find.textContaining('Google Safe Browsing:'), findsWidgets);
+      await tapText('Chi tiết và giới hạn kiểm tra');
+      expect(find.text('OpenPhish Community'), findsOneWidget);
+      expect(find.text('Google Safe Browsing'), findsOneWidget);
       expect(
         find.text('Mô hình: ${api.results.last['model']['version']}'),
         findsOneWidget,
@@ -111,8 +114,8 @@ void main() {
       await tester.pumpAndSettle();
 
       await check('https://google.com@evil.example/login', 2);
-      expect(find.text('Cần thận trọng'), findsOneWidget);
-      expect(find.text('evil.example'), findsOneWidget);
+      expect(find.text('Cần xác minh'), findsOneWidget);
+      expect(find.text('evil.example', findRichText: true), findsWidgets);
       await capture('lynveris-warning');
       await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
@@ -158,7 +161,7 @@ void main() {
         api.results.last['threat']['checks'][0]['status'],
         'not_configured',
       );
-      await tapText('Nguồn và giới hạn kiểm tra');
+      await tapText('Chi tiết và giới hạn kiểm tra');
       await capture('lynveris-source-unavailable');
       await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
@@ -176,7 +179,7 @@ void main() {
       );
       await capture('lynveris-offline');
       store.apiBase = 'http://10.0.2.2:8001';
-      await tester.tap(find.text('Kiểm tra đường link'));
+      await tester.tap(find.text('Thử lại'));
       await waitFor(
         () => find
             .textContaining('Máy chủ phản hồi quá lâu.')
