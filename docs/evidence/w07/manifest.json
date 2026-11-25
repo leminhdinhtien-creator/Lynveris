@@ -1,0 +1,58 @@
+{
+  "backend-tests.xml": {
+    "bytes": 18937,
+    "sha256": "a45d2726dbb36058095dd082406fff29db12b0de5040baa7c5954197145274c8"
+  },
+  "browser-checks.json": {
+    "bytes": 680,
+    "sha256": "2765ddaf25b588df4d40669342954c956dafda083c6cbb95437d4bdefa4fa458"
+  },
+  "compose-checks.json": {
+    "bytes": 1296,
+    "sha256": "f757992c0e53e1406a5e7f8395390569fcd98ec96dbd34bc88e3dd70b01c0459"
+  },
+  "flutter-analyze.txt": {
+    "bytes": 99,
+    "sha256": "4decf33191848a2bbe32e9ce0f7764f5061308ae0e322b4fce88b7fbbd92f42b"
+  },
+  "flutter-tests.txt": {
+    "bytes": 2165,
+    "sha256": "a79b6ea0e111800b10d37e83f6254951a37d5081a498d381f7ec57f519aa25b6"
+  },
+  "quality-checks.json": {
+    "bytes": 6648,
+    "sha256": "020453e7251a1a53c5d78e1af0073f6b3da31f3bd57df5e0810dceba66b44453"
+  },
+  "security-proof.txt": {
+    "bytes": 1421,
+    "sha256": "afaf749ee6f56958e22a45260842be677489d67dd515fa19c1750c4fad68c3be"
+  },
+  "ux-after-evidence.png": {
+    "bytes": 40675,
+    "sha256": "dc22499a6332533cc5bb623b7d59d4122f3bba74f0183a32f2e3bfa8786e29a8"
+  },
+  "ux-after-home.png": {
+    "bytes": 37136,
+    "sha256": "db3a5a340334d55360fd4bc0641cd4805e679a0f14bdcb10f3237793d33dcd4d"
+  },
+  "ux-after-result.png": {
+    "bytes": 42975,
+    "sha256": "d3c08d41b20aa4e835690ed806d2337322719043119a74ce9f87060401fc9db2"
+  },
+  "ux-after-scan.png": {
+    "bytes": 19873,
+    "sha256": "f0043375c6619973e05de2668e33b7ab19417cbe3096c3c2dfdc18dc05a10f1d"
+  },
+  "ux-before-home.png": {
+    "bytes": 77020,
+    "sha256": "a57bf83d2e28bb775cb42008dadfa8ae1bf574d016ab2ba916731034588bcd02"
+  },
+  "ux-before-result.png": {
+    "bytes": 96407,
+    "sha256": "3c2f950fe689efb0bbdd185990dab4cc3c35f79e074b17b0af917983aac66730"
+  },
+  "ux-feedback.json": {
+    "bytes": 2028,
+    "sha256": "9e5b7ae2478ddc3ce24a92b222d682424ea859b9c5ac3748f118644b17bca357"
+  }
+}

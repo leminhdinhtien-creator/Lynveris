@@ -1,0 +1,314 @@
+{
+  "checked_at": "2026-11-25T13:06:40.817913+00:00",
+  "platform": "Windows-10-10.0.26300-SP0",
+  "runtime": "3.10.11",
+  "model_versions": [
+    "20261029T135127Z"
+  ],
+  "targets": {
+    "NFR01": {
+      "metric": "warm URL-only API p95",
+      "target": "<= 500 ms",
+      "samples": 100
+    },
+    "NFR02": {
+      "metric": "valid request success",
+      "target": ">= 99%",
+      "samples": 100
+    },
+    "NFR03": {
+      "metric": "raw URL or token in new persisted events",
+      "target": "0 occurrences"
+    },
+    "NFR04": {
+      "metric": "per-client throttling",
+      "target": "first 30 accepted, request 31 HTTP429"
+    },
+    "NFR05": {
+      "metric": "small-screen layout exceptions",
+      "target": "0 at 320x640 and 150% text"
+    }
+  },
+  "results": {
+    "NFR01": {
+      "actual_ms": 2.85,
+      "passed": true
+    },
+    "NFR02": {
+      "actual_percent": 100.0,
+      "passed": true
+    },
+    "NFR03": {
+      "raw_occurrences": 0,
+      "new_pg_events_checked": 1,
+      "passed": true
+    },
+    "NFR04": {
+      "accepted": 30,
+      "request_31": 429,
+      "passed": true
+    },
+    "NFR05": {
+      "layout_exceptions": 0,
+      "flutter_tests_passed": 20,
+      "passed": true
+    }
+  },
+  "security_checks": [
+    {
+      "id": "SEC01",
+      "expected": "runtime role has SELECT/INSERT/DELETE, no administration/CREATE/TRUNCATE",
+      "actual": {
+        "rolsuper": false,
+        "rolcreatedb": false,
+        "rolcreaterole": false,
+        "can_select": true,
+        "can_insert": true,
+        "can_delete": true,
+        "can_truncate": false,
+        "can_create": false
+      },
+      "passed": true
+    },
+    {
+      "id": "SEC02",
+      "expected": "unauthorized DDL rejected with SQLSTATE42501",
+      "actual": {
+        "permission_denied": true
+      },
+      "passed": true
+    },
+    {
+      "id": "SEC03",
+      "expected": "HTTP413 and no-store",
+      "actual": {
+        "http": 413,
+        "cache_control": "no-store"
+      },
+      "passed": true
+    },
+    {
+      "id": "SEC04",
+      "expected": "invalid input HTTP422, no reflected private text",
+      "actual": {
+        "http": 422,
+        "private_input_reflected": false
+      },
+      "passed": true
+    },
+    {
+      "id": "SEC05",
+      "expected": "different token deletes 0 and retains own event",
+      "actual": {
+        "http": 200,
+        "deleted": 0,
+        "own_event_retained": true
+      },
+      "passed": true
+    },
+    {
+      "id": "SEC06",
+      "expected": "different token deletes 0 and retains own event",
+      "actual": {
+        "http": 200,
+        "deleted": 0,
+        "own_event_retained": true
+      },
+      "passed": true
+    },
+    {
+      "id": "SEC07",
+      "expected": "no raw URL/message/token persisted",
+      "actual": {
+        "columns": [
+          "id",
+          "owner_hash",
+          "verdict",
+          "model_version",
+          "source_status",
+          "observed_hour",
+          "expires_at"
+        ],
+        "raw_secret_occurrences": 0
+      },
+      "passed": true
+    },
+    {
+      "id": "SEC08",
+      "expected": "existing DB IDs unchanged",
+      "actual": {
+        "before_count": 0,
+        "after_count": 0
+      },
+      "passed": true
+    },
+    {
+      "id": "SEC09",
+      "expected": "30 HTTP200 then HTTP429 despite varied X-Forwarded-For",
+      "actual": {
+        "statuses": [
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          429
+        ]
+      },
+      "passed": true
+    }
+  ],
+  "performance": {
+    "samples_ms": [
+      2.305,
+      2.087,
+      1.96,
+      2.098,
+      1.941,
+      1.807,
+      1.878,
+      2.565,
+      2.011,
+      1.888,
+      2.219,
+      2.061,
+      2.158,
+      2.622,
+      2.09,
+      2.116,
+      2.152,
+      2.111,
+      2.036,
+      2.412,
+      2.279,
+      2.307,
+      2.583,
+      2.252,
+      2.088,
+      2.73,
+      2.207,
+      1.966,
+      2.439,
+      2.334,
+      2.164,
+      2.244,
+      2.319,
+      2.122,
+      2.961,
+      2.638,
+      2.648,
+      3.246,
+      2.334,
+      2.708,
+      2.349,
+      2.583,
+      2.624,
+      2.177,
+      2.279,
+      2.85,
+      2.208,
+      2.331,
+      2.191,
+      2.007,
+      2.554,
+      2.408,
+      2.11,
+      2.263,
+      2.26,
+      2.264,
+      2.348,
+      2.462,
+      2.289,
+      2.604,
+      2.599,
+      2.305,
+      2.615,
+      2.999,
+      2.947,
+      2.425,
+      2.31,
+      2.54,
+      2.845,
+      2.643,
+      2.77,
+      2.309,
+      2.413,
+      2.231,
+      2.326,
+      2.174,
+      2.231,
+      2.394,
+      2.368,
+      2.473,
+      2.302,
+      2.574,
+      2.301,
+      2.207,
+      2.265,
+      2.251,
+      2.438,
+      2.535,
+      2.337,
+      2.98,
+      2.439,
+      2.249,
+      2.648,
+      2.253,
+      2.241,
+      2.362,
+      2.416,
+      2.111,
+      2.308,
+      2.069
+    ],
+    "warmup": 5,
+    "concurrency": 1,
+    "p50_ms": 2.307,
+    "p95_ms": 2.85,
+    "source_mode": "URL-only, external lookup off",
+    "quality_port": 8007,
+    "quality_rate_limit": 600,
+    "production_rate_limit_tested_separately": 30
+  },
+  "locked_files_unchanged": {
+    "artifacts/model-phreshphish-v1/manifest.json": true,
+    "artifacts/model-phreshphish-v1/model.joblib": true,
+    "artifacts/model-phreshphish-v1/test-evaluation.lock": true,
+    "artifacts/model-phreshphish-v1/test-report.json": true,
+    "data/phreshphish-splits-20261029-v1/split-manifest.json": true,
+    "data/phreshphish-splits-20261029-v1/test.jsonl": true,
+    "data/phreshphish-splits-20261029-v1/test_unsupported.jsonl": true,
+    "data/phreshphish-splits-20261029-v1/train.jsonl": true,
+    "data/phreshphish-splits-20261029-v1/validation.jsonl": true
+  },
+  "limitations": [
+    "Loopback sequential warm sample, not public Internet load or concurrent throughput.",
+    "NFR05 uses a widget fixture to exercise layout, not a human usability study.",
+    "No model, threshold or research test changed."
+  ]
+}
